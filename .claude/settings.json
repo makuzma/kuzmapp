@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+"Bash",
+"Read",
+"Edit",
+"Write",
+"WebFetch",
+"Grep",
+"Glob",
+"LS",
+"MultiEdit",
+"NotebookRead",
+"NotebookEdit",
+"TodoRead",
+"TodoWrite",
+"WebSearch"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo rm *)",
+      "Edit(/home/marcelkuzma/web/nuxt-app*)",
+      "Edit(/home/marcelkuzma/web/!(kuzmapp)*)",
+      "Write(/home/marcelkuzma/web/nuxt-app*)",
+      "Write(/home/marcelkuzma/web/!(kuzmapp)*)",
+      "Bash(* /home/marcelkuzma/web/nuxt-app*)",
+      "Bash(cd /home/marcelkuzma/web/nuxt-app*)"
+    ]
+  },
+  "additionalDirectories": [
+    "\\\\wsl.localhost\\Ubuntu-22.04\\home\\marcelkuzma\\web\\kuzmapp"
+  ]
+}

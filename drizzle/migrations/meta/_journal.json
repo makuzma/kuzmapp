@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1772803003297,
+      "tag": "0000_lethal_donald_blake",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772888870245,
+      "tag": "0001_add_project_contact_product",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773516040226,
+      "tag": "0002_add_pin_fileId",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773524308154,
+      "tag": "0003_add_pin_fileId",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1773605078354,
+      "tag": "0004_add_stock_watchlist",
+      "breakpoints": true
+    }
+  ]
+}
