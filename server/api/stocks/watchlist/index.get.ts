@@ -1,4 +1,4 @@
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { auth } from '../../../lib/auth'
 import { db } from '../../../lib/db'
 import { stockWatchlist } from '../../../../drizzle/schema'
@@ -38,25 +38,52 @@ export default defineEventHandler(async (event) => {
     .where(where)
     .orderBy(stockWatchlist.createdAt)
 
-  const withPrices = await Promise.all(
-    rows.map(async (row) => {
-      const { price, changePercent, currency } = await fetchPrice(row.symbol)
-      return {
-        id: row.id,
-        symbol: row.symbol,
-        name: row.name,
-        exchange: row.exchange,
-        currency: currency || row.currency,
-        price,
-        changePercent,
-        shares: row.shares,
-        purchasePrice: row.purchasePrice,
-        purchaseDate: row.purchaseDate,
-        portfolioId: row.portfolioId,
-        createdAt: row.createdAt,
-      }
-    })
-  )
+  // Fetch prices for unique symbols in parallel
+  const symbols = [...new Set(rows.map(r => r.symbol))]
+  const priceMap = new Map<string, { price: number | null; changePercent: number | null; currency: string }>()
+  await Promise.all(symbols.map(async (sym) => {
+    priceMap.set(sym, await fetchPrice(sym))
+  }))
 
-  return withPrices
+  // Group rows by symbol
+  const groupMap = new Map<string, { firstRow: typeof rows[0]; rows: typeof rows }>()
+  for (const row of rows) {
+    if (!groupMap.has(row.symbol)) {
+      groupMap.set(row.symbol, { firstRow: row, rows: [] })
+    }
+    groupMap.get(row.symbol)!.rows.push(row)
+  }
+
+  return Array.from(groupMap.values()).map(({ firstRow, rows: groupRows }) => {
+    const { price, changePercent, currency } = priceMap.get(firstRow.symbol)!
+
+    // Weighted average purchase price (only tranches with both shares and purchasePrice)
+    const tranchesWithData = groupRows.filter(r => r.shares && r.purchasePrice)
+    const totalSharesForAvg = tranchesWithData.reduce((s, r) => s + r.shares!, 0)
+    const avgPurchasePrice = totalSharesForAvg > 0
+      ? tranchesWithData.reduce((s, r) => s + r.shares! * r.purchasePrice!, 0) / totalSharesForAvg
+      : null
+
+    const totalSharesRaw = groupRows.reduce((s, r) => s + (r.shares ?? 0), 0)
+    const totalShares = totalSharesRaw > 0 ? totalSharesRaw : null
+
+    return {
+      symbol: firstRow.symbol,
+      name: firstRow.name,
+      exchange: firstRow.exchange,
+      currency: currency || firstRow.currency,
+      price,
+      changePercent,
+      totalShares,
+      avgPurchasePrice,
+      tranches: groupRows.map(r => ({
+        id: r.id,
+        shares: r.shares,
+        purchasePrice: r.purchasePrice,
+        purchaseDate: r.purchaseDate,
+        portfolioId: r.portfolioId,
+        createdAt: r.createdAt,
+      })),
+    }
+  })
 })

@@ -381,6 +381,15 @@ export const metalHolding = pgTable('metal_holding', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+export const saule3a = pgTable('saule3a', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  label: text('label').notNull().default(''),
+  amount: real('amount').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
 export const stockWatchlist = pgTable('stock_watchlist', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
@@ -393,4 +402,4 @@ export const stockWatchlist = pgTable('stock_watchlist', {
   purchaseDate: text('purchase_date'),
   portfolioId: text('portfolio_id').references(() => portfolio.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-}, t => [unique().on(t.userId, t.symbol)])
+})

@@ -39,31 +39,6 @@
         </UCard>
       </NuxtLink>
 
-      <!-- Projekte -->
-      <NuxtLink v-if="canAccess('projects')" to="/projects" class="block">
-        <UCard class="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
-          <div class="flex items-center justify-between">
-            <div class="space-y-1">
-              <p class="font-medium">Projekte</p>
-              <p class="text-sm text-gray-500">Verwalte deine Projekte</p>
-            </div>
-            <UIcon name="i-lucide-chevron-right" class="text-gray-400 shrink-0" />
-          </div>
-        </UCard>
-      </NuxtLink>
-
-      <!-- Galerie -->
-      <NuxtLink v-if="canAccess('gallery')" to="/gallery" class="block">
-        <UCard class="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
-          <div class="flex items-center justify-between">
-            <div class="space-y-1">
-              <p class="font-medium">Galerie</p>
-              <p class="text-sm text-gray-500">Bilder hochladen und ansehen</p>
-            </div>
-            <UIcon name="i-lucide-chevron-right" class="text-gray-400 shrink-0" />
-          </div>
-        </UCard>
-      </NuxtLink>
 
       <!-- Einstellungen -->
       <NuxtLink v-if="canAccess('settings')" to="/settings" class="block">

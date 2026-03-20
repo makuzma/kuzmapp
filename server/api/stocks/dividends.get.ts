@@ -50,19 +50,29 @@ export default defineEventHandler(async (event) => {
     (!portfolioId || r.portfolioId === portfolioId)
   )
 
+  // Group by symbol, sum shares
+  const symbolMap = new Map<string, { firstRow: typeof rows[0]; totalShares: number }>()
+  for (const r of withShares) {
+    if (!symbolMap.has(r.symbol)) {
+      symbolMap.set(r.symbol, { firstRow: r, totalShares: r.shares! })
+    } else {
+      symbolMap.get(r.symbol)!.totalShares += r.shares!
+    }
+  }
+
   const results = await Promise.all(
-    withShares.map(async (r) => {
-      const { dividendRate, exDividendDate } = await fetchAnnualDividend(r.symbol)
+    Array.from(symbolMap.entries()).map(async ([symbol, { firstRow, totalShares }]) => {
+      const { dividendRate, exDividendDate } = await fetchAnnualDividend(symbol)
       return {
-        id: r.id,
-        symbol: r.symbol,
-        name: r.name,
-        currency: r.currency,
-        shares: r.shares!,
+        id: firstRow.id,
+        symbol,
+        name: firstRow.name,
+        currency: firstRow.currency,
+        shares: totalShares,
         dividendRate,
-        annualDividend: dividendRate != null ? dividendRate * r.shares! : null,
+        annualDividend: dividendRate != null ? dividendRate * totalShares : null,
         exDividendDate,
-        portfolioId: r.portfolioId,
+        portfolioId: firstRow.portfolioId,
       }
     })
   )

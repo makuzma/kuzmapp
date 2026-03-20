@@ -1,5 +1,14 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  routeRules: {
+    '/dashboard': { ssr: false },
+    '/account': { ssr: false },
+    '/settings/**': { ssr: false },
+    '/users': { ssr: false },
+    '/vacations': { ssr: false },
+    '/stocks': { ssr: false },
+    '/stocks/**': { ssr: false },
+  },
   nitro: {
     externals: {
       external: ['pdfkit'],

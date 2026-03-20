@@ -6,7 +6,7 @@
       <div class="flex items-center gap-3">
         <UButton variant="ghost" color="neutral" icon="i-lucide-arrow-left" to="/dashboard" />
         <div>
-          <h1 class="text-3xl font-bold">Styleguide</h1>
+          <h1 class="text-5xl italic font-instrument">Styleguide</h1>
           <p class="text-sm text-gray-500 mt-0.5">Design-System & Globale Styles</p>
         </div>
       </div>
@@ -14,7 +14,7 @@
       <!-- DESIGN TOKENS (EDITABLE) -->
       <section class="space-y-4">
         <div class="flex items-center gap-2">
-          <h2 class="text-xl font-semibold">Design Tokens</h2>
+          <h2 class="text-[1.925rem] italic font-instrument">Design Tokens</h2>
           <span class="text-sm font-normal text-gray-400">— Live editierbar</span>
         </div>
         <UCard>
@@ -34,7 +34,7 @@
                       class="absolute inset-0 opacity-0 cursor-pointer"
                       @input="(e) => onBaseColorChange((e.target as HTMLInputElement).value)"
                     />
-                    <code class="text-xs font-mono text-gray-500">{{ primaryShades[5]!.value }}</code>
+                    <code class="text-xs font-suse-mono text-gray-500">{{ primaryShades[5]!.value }}</code>
                   </label>
                 </div>
               </div>
@@ -56,8 +56,8 @@
                       @input="(e) => updateShade(idx, (e.target as HTMLInputElement).value)"
                     />
                   </label>
-                  <p class="text-xs text-gray-500 font-medium">{{ shade.label }}</p>
-                  <p class="text-xs font-mono text-gray-400">{{ shade.value }}</p>
+                  <p class="text-xs text-gray-500 font-medium font-suse-mono">{{ shade.label }}</p>
+                  <p class="text-xs font-suse-mono text-gray-400">{{ shade.value }}</p>
                 </div>
               </div>
             </div>
@@ -77,9 +77,9 @@
                   </UButton>
                 </div>
               </div>
-              <pre class="text-xs font-mono bg-gray-100 dark:bg-gray-800 rounded-lg p-4 overflow-x-auto leading-relaxed text-gray-600 dark:text-gray-300 select-all">{{ generatedCss }}</pre>
+              <pre class="text-xs font-suse-mono bg-gray-100 dark:bg-gray-800 rounded-lg p-4 overflow-x-auto leading-relaxed text-gray-600 dark:text-gray-300 select-all">{{ generatedCss }}</pre>
               <p class="text-xs text-gray-400">
-                Diesen Block in <code class="font-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">assets/css/main.css</code> einsetzen um Änderungen global anzuwenden.
+                Diesen Block in <code class="font-suse-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">assets/css/main.css</code> einsetzen um Änderungen global anzuwenden.
               </p>
             </div>
 
@@ -120,7 +120,7 @@
                 <div v-for="color in statusColors" :key="color.name" class="space-y-1 text-center">
                   <div class="w-16 h-10 rounded-lg" :style="{ backgroundColor: color.hex }" />
                   <p class="text-xs text-gray-500">{{ color.name }}</p>
-                  <p class="text-xs font-mono text-gray-400">{{ color.hex }}</p>
+                  <p class="text-xs font-suse-mono text-gray-400">{{ color.hex }}</p>
                 </div>
               </div>
             </div>
@@ -132,63 +132,86 @@
       <!-- TYPOGRAFIE -->
       <section class="space-y-4">
         <SectionTitle>Typografie</SectionTitle>
+
+        <!-- Fonts -->
         <UCard>
           <div class="space-y-6">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Schriftarten</p>
+            <div class="space-y-5 divide-y divide-gray-100 dark:divide-gray-800">
 
-            <div class="space-y-3">
-              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Überschriften</p>
-              <div class="space-y-2 divide-y divide-gray-100 dark:divide-gray-800">
-                <div class="flex items-baseline gap-6 py-2 first:pt-0">
-                  <span class="w-28 text-xs text-gray-400 shrink-0">text-3xl bold</span>
-                  <p class="text-3xl font-bold">Seitenüberschrift</p>
+              <div class="flex items-start gap-6 pt-5 first:pt-0">
+                <div class="w-40 shrink-0">
+                  <p class="text-xs text-gray-400 font-mono">Instrument Serif</p>
+                  <p class="text-xs text-gray-400">Überschriften · italic</p>
                 </div>
-                <div class="flex items-baseline gap-6 py-2">
-                  <span class="w-28 text-xs text-gray-400 shrink-0">text-2xl bold</span>
-                  <p class="text-2xl font-bold">Haupttitel</p>
-                </div>
-                <div class="flex items-baseline gap-6 py-2">
-                  <span class="w-28 text-xs text-gray-400 shrink-0">text-xl semibold</span>
-                  <p class="text-xl font-semibold">Abschnittstitel</p>
-                </div>
-                <div class="flex items-baseline gap-6 py-2">
-                  <span class="w-28 text-xs text-gray-400 shrink-0">text-lg semibold</span>
-                  <p class="text-lg font-semibold">Kartentitel</p>
-                </div>
-                <div class="flex items-baseline gap-6 py-2">
-                  <span class="w-28 text-xs text-gray-400 shrink-0">text-base medium</span>
-                  <p class="text-base font-medium">Feldbezeichnung</p>
+                <div>
+                  <p class="text-4xl italic font-instrument">Finance Dashboard</p>
+                  <p class="text-2xl italic font-instrument text-gray-500 mt-1">Abschnittstitel & Highlights</p>
                 </div>
               </div>
-            </div>
 
-            <USeparator />
-
-            <div class="space-y-3">
-              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Fließtext</p>
-              <div class="space-y-2 divide-y divide-gray-100 dark:divide-gray-800">
-                <div class="flex items-baseline gap-6 py-2 first:pt-0">
-                  <span class="w-28 text-xs text-gray-400 shrink-0">text-base</span>
-                  <p class="text-base">Normaler Text — Lorem ipsum dolor sit amet consectetur.</p>
+              <div class="flex items-start gap-6 pt-5">
+                <div class="w-40 shrink-0">
+                  <p class="text-xs text-gray-400 font-mono">SUSE</p>
+                  <p class="text-xs text-gray-400">UI-Text · Fliesstext</p>
                 </div>
-                <div class="flex items-baseline gap-6 py-2">
-                  <span class="w-28 text-xs text-gray-400 shrink-0">text-sm</span>
-                  <p class="text-sm">Kleintext — Beschreibungen und Metadaten.</p>
-                </div>
-                <div class="flex items-baseline gap-6 py-2">
-                  <span class="w-28 text-xs text-gray-400 shrink-0">text-sm gray-500</span>
-                  <p class="text-sm text-gray-500">Sekundärer Text — Ergänzende Informationen.</p>
-                </div>
-                <div class="flex items-baseline gap-6 py-2">
-                  <span class="w-28 text-xs text-gray-400 shrink-0">text-xs gray-400</span>
-                  <p class="text-xs text-gray-400">Labels & Hinweise — Zeitstempel, Metainfo.</p>
-                </div>
-                <div class="flex items-baseline gap-6 py-2">
-                  <span class="w-28 text-xs text-gray-400 shrink-0">uppercase label</span>
-                  <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Abschnittsbezeichnung</p>
+                <div class="space-y-1">
+                  <p class="text-base font-suse">Normaler Text — Lorem ipsum dolor sit amet consectetur.</p>
+                  <p class="text-sm font-suse text-gray-500">Kleintext — Beschreibungen und Metadaten.</p>
+                  <p class="text-xs font-suse text-gray-400">Labels & Hinweise — Zeitstempel, Metainfo.</p>
                 </div>
               </div>
-            </div>
 
+              <div class="flex items-start gap-6 pt-5">
+                <div class="w-40 shrink-0">
+                  <p class="text-xs text-gray-400 font-mono">SUSE Mono</p>
+                  <p class="text-xs text-gray-400">Zahlen · Code</p>
+                </div>
+                <div class="space-y-1">
+                  <p class="text-2xl font-suse-mono">1.234.567,89 €</p>
+                  <p class="text-base font-suse-mono text-gray-500">+12,4 % · 0123456789</p>
+                  <p class="text-sm font-suse-mono text-gray-400">CHF 9'999.00 · $1,000.00</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </UCard>
+
+        <!-- Hierarchie -->
+        <UCard>
+          <div class="space-y-6">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Hierarchie</p>
+            <div class="space-y-2 divide-y divide-gray-100 dark:divide-gray-800">
+              <div class="flex items-baseline gap-6 py-2 first:pt-0">
+                <span class="w-40 text-xs text-gray-400 shrink-0">h1</span>
+                <h1 class="text-5xl italic font-instrument">Seitenüberschrift</h1>
+              </div>
+              <div class="flex items-baseline gap-6 py-2">
+                <span class="w-40 text-xs text-gray-400 shrink-0">h2</span>
+                <h2 class="text-[1.925rem] italic font-instrument">Abschnittstitel</h2>
+              </div>
+              <div class="flex items-baseline gap-6 py-2">
+                <span class="w-40 text-xs text-gray-400 shrink-0">Kartentitel · text-lg</span>
+                <p class="text-lg font-semibold">Kartentitel</p>
+              </div>
+              <div class="flex items-baseline gap-6 py-2">
+                <span class="w-40 text-xs text-gray-400 shrink-0">Body · text-base</span>
+                <p class="text-base">Normaler Fliesstext</p>
+              </div>
+              <div class="flex items-baseline gap-6 py-2">
+                <span class="w-40 text-xs text-gray-400 shrink-0">Small · text-sm gray-500</span>
+                <p class="text-sm text-gray-500">Sekundärer Text</p>
+              </div>
+              <div class="flex items-baseline gap-6 py-2">
+                <span class="w-40 text-xs text-gray-400 shrink-0">Label · text-xs uppercase</span>
+                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Abschnittsbezeichnung</p>
+              </div>
+              <div class="flex items-baseline gap-6 py-2">
+                <span class="w-40 text-xs text-gray-400 shrink-0">Zahl · SUSE Mono</span>
+                <p class="text-base font-suse-mono">42.000,00 €</p>
+              </div>
+            </div>
           </div>
         </UCard>
       </section>
@@ -366,6 +389,37 @@
         </div>
       </section>
 
+      <!-- NEUMORPHIC CARDS -->
+      <section class="space-y-4">
+        <SectionTitle>Cards · Neumorphic</SectionTitle>
+        <div class="flex flex-wrap gap-6">
+          <div v-for="(card, idx) in neuCards" :key="idx" class="nm-base">
+            <div class="nm-card">
+              <div class="nm-header">
+                <span class="nm-title">{{ card.label }}</span>
+                <div class="nm-icon-btn">
+                  <UIcon name="i-lucide-trending-up" class="w-3 h-3 text-red-400" />
+                </div>
+              </div>
+              <div class="nm-track">
+                <div class="nm-fill" :style="{ width: card.progress + '%' }" />
+              </div>
+              <div class="nm-progress-label">{{ card.progress }}%</div>
+              <div class="nm-stats">
+                <div class="nm-value-row">
+                  <span class="nm-currency font-suse-mono">CHF</span>
+                  <span class="nm-amount font-suse-mono">{{ card.value.toLocaleString('de-CH') }}</span>
+                </div>
+                <span class="nm-badge nm-badge-up">
+                  <UIcon name="i-lucide-trending-up" class="w-2.5 h-2.5" />
+                  +{{ card.change }}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- AVATARE -->
       <section class="space-y-4">
         <SectionTitle>Avatare</SectionTitle>
@@ -423,7 +477,7 @@
               <div class="flex flex-wrap gap-2 items-end">
                 <div v-for="s in [1,2,3,4,5,6,8,10,12]" :key="s" class="flex flex-col items-center gap-1">
                   <div class="bg-primary-200 dark:bg-primary-900 rounded" :style="{ width: `${s * 4}px`, height: `${s * 4}px` }" />
-                  <p class="text-xs text-gray-400">{{ s }}</p>
+                  <p class="text-xs text-gray-400 font-suse-mono">{{ s }}</p>
                 </div>
               </div>
             </div>
@@ -450,7 +504,7 @@ definePageMeta({ middleware: 'auth' })
 
 // Inline helper components
 const SectionTitle = defineComponent({
-  template: `<h2 class="text-xl font-semibold"><slot /></h2>`,
+  template: `<h2 class="text-[1.925rem] italic font-instrument"><slot /></h2>`,
 })
 
 const ColorSwatch = defineComponent({
@@ -568,6 +622,25 @@ async function copyCss() {
   setTimeout(() => (copied.value = false), 2000)
 }
 
+// ── Neumorphic cards ─────────────────────────────────────────────────────────
+
+const neuCards = ref([
+  { label: 'revenue',  progress: 42, value: 33678, change: '10.74' },
+  { label: 'profit',   progress: 67, value: 12450, change: '5.32' },
+  { label: 'orders',   progress: 88, value: 87230, change: '8.91' },
+])
+
+// Simulate live updates
+onMounted(() => {
+  setInterval(() => {
+    neuCards.value = neuCards.value.map(c => ({
+      ...c,
+      value: Math.max(10000, Math.round(c.value * (1 + (Math.random() - 0.45) * 0.08))),
+      change: (Math.random() * 15 + 1).toFixed(2),
+    }))
+  }, 4000)
+})
+
 // ── Static data ──────────────────────────────────────────────────────────────
 
 const statusColors = [
@@ -619,3 +692,99 @@ const radiusExamples = [
   { label: 'full', class: 'rounded-full' },
 ]
 </script>
+
+<style scoped>
+.nm-base {
+  width: 280px;
+  padding: 28px 22px;
+  border-radius: 28px;
+  background: #3a7bd5;
+  box-shadow: 8px 8px 24px rgba(0,0,0,0.18), -4px -4px 16px rgba(255,255,255,0.08);
+}
+
+.nm-card {
+  border-radius: 18px;
+  padding: 20px 20px 16px;
+  background: linear-gradient(145deg, #ffffff 0%, #f4f6fa 60%, #ffffff 100%);
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    -14px -14px 36px rgba(160,210,255,0.7),
+    -6px -6px 14px rgba(200,230,255,0.5),
+    14px 14px 36px rgba(0,0,0,0.5),
+    6px 6px 14px rgba(0,0,0,0.3),
+    inset 0 2px 4px rgba(255,255,255,0.95),
+    inset 0 -1px 3px rgba(0,0,0,0.03);
+}
+
+.nm-card::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 18px;
+  background: linear-gradient(160deg,
+    rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.15) 30%,
+    rgba(255,255,255,0) 55%, rgba(255,255,255,0.08) 80%,
+    rgba(255,255,255,0.3) 100%);
+  pointer-events: none; z-index: 0;
+}
+
+.nm-card > * { position: relative; z-index: 2; }
+
+.nm-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.nm-title {
+  font-size: 14px; font-weight: 800; color: #1a1a2e; text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+
+.nm-icon-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  box-shadow: 3px 3px 6px rgba(0,0,0,0.06), -2px -2px 5px rgba(255,255,255,0.9);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+.nm-track {
+  height: 10px; border-radius: 10px; background: #e8ecf1;
+  box-shadow: inset 3px 3px 6px #cdd1d6, inset -3px -3px 6px #ffffff;
+  overflow: hidden;
+}
+
+.nm-fill {
+  height: 100%; border-radius: 10px;
+  background: linear-gradient(90deg, #3a7bd5, #5ea1f7);
+  box-shadow: 0 2px 8px rgba(58,123,213,0.35);
+  transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nm-progress-label {
+  text-align: right; font-size: 12px; font-weight: 700;
+  color: #3a7bd5; margin-top: 5px;
+}
+
+.nm-stats {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid #eef1f5;
+}
+
+.nm-value-row { display: flex; align-items: baseline; gap: 4px; }
+
+.nm-currency {
+  font-size: 12px; font-weight: 500; color: #6b7280;
+}
+
+.nm-amount {
+  font-size: 22px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.5px;
+  transition: color 0.5s ease;
+}
+
+.nm-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 8px; border-radius: 50px;
+  font-size: 11px; font-weight: 600;
+  background: #eafaf0; color: #27ae60;
+}
+</style>

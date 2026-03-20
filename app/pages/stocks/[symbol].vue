@@ -177,11 +177,22 @@ const { data, pending } = await useFetch(
   { headers, watch: [activeRange] }
 )
 
-const { data: watchlistData } = await useFetch<{ id: string; symbol: string; shares: number | null; purchasePrice: number | null }[]>(
+interface WatchlistGroup {
+  symbol: string
+  totalShares: number | null
+  avgPurchasePrice: number | null
+  tranches: { id: string; shares: number | null; purchasePrice: number | null }[]
+}
+
+const { data: watchlistData } = await useFetch<WatchlistGroup[]>(
   '/api/stocks/watchlist',
   { headers }
 )
-const position = computed(() => watchlistData.value?.find(w => w.symbol === symbol) ?? null)
+const position = computed(() => {
+  const group = watchlistData.value?.find(g => g.symbol === symbol)
+  if (!group) return null
+  return { shares: group.totalShares, purchasePrice: group.avgPurchasePrice }
+})
 
 const history = computed(() => (data.value as any)?.history ?? [])
 

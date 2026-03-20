@@ -36,6 +36,20 @@
       "when": 1773605078354,
       "tag": "0004_add_stock_watchlist",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1742169600000,
+      "tag": "0005_stock_watchlist_drop_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1742256000000,
+      "tag": "0006_saule3a",
+      "breakpoints": true
     }
   ]
 }

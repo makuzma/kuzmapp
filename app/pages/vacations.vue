@@ -260,9 +260,7 @@
                     </div>
                     <div v-if="deadlinesOnDay(cell.date).length" class="absolute top-1 left-1 flex flex-wrap gap-0.5">
                       <UTooltip v-for="p in deadlinesOnDay(cell.date)" :key="p.id" :delay-duration="0" :ui="{ content: 'shadow-lg text-xs px-2 py-1.5' }">
-                        <NuxtLink :to="`/projects/${p.id}`" class="block">
-                          <span class="w-3 h-3 rounded-full bg-orange-400 dark:bg-orange-500 block hover:scale-125 transition-transform" />
-                        </NuxtLink>
+                        <span class="w-3 h-3 rounded-full bg-orange-400 dark:bg-orange-500 block hover:scale-125 transition-transform" />
                         <template #content>
                           <p class="font-medium">{{ p.name }}</p>
                           <p v-if="p.customer" class="text-gray-400 dark:text-gray-500 text-xs">{{ p.customer.name }}</p>

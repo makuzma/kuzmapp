@@ -53,6 +53,16 @@
           Aktien
         </NuxtLink>
         <NuxtLink
+          to="/finance"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+          :class="route.path === '/finance'
+            ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'"
+        >
+          <UIcon name="i-lucide-wallet" class="w-3.5 h-3.5" />
+          Finance
+        </NuxtLink>
+        <NuxtLink
           v-if="isSuperAdmin"
           to="/users"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
@@ -63,6 +73,17 @@
           <UIcon name="i-lucide-users" class="w-3.5 h-3.5" />
           Benutzer
         </NuxtLink>
+        <NuxtLink
+          v-if="isSuperAdmin"
+          to="/styleguide"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+          :class="route.path === '/styleguide'
+            ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'"
+        >
+          <UIcon name="i-lucide-palette" class="w-3.5 h-3.5" />
+          Styleguide
+        </NuxtLink>
       </nav>
 
       <!-- Spacer on mobile/tablet -->
@@ -70,7 +91,7 @@
 
       <!-- Right side -->
       <div class="flex items-center gap-1 shrink-0">
-        <ColorModeButton />
+        <ClientOnly><ColorModeButton /></ClientOnly>
 
         <!-- Notification Bell -->
         <div class="relative" ref="bellRef">
@@ -252,6 +273,17 @@
             Aktien
           </NuxtLink>
           <NuxtLink
+            to="/finance"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+            :class="route.path === '/finance'
+              ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'"
+            @click="mobileOpen = false"
+          >
+            <UIcon name="i-lucide-wallet" class="w-4 h-4" />
+            Finance
+          </NuxtLink>
+          <NuxtLink
             v-if="isSuperAdmin"
             to="/users"
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
@@ -262,6 +294,18 @@
           >
             <UIcon name="i-lucide-users" class="w-4 h-4" />
             Benutzer
+          </NuxtLink>
+          <NuxtLink
+            v-if="isSuperAdmin"
+            to="/styleguide"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+            :class="route.path === '/styleguide'
+              ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'"
+            @click="mobileOpen = false"
+          >
+            <UIcon name="i-lucide-palette" class="w-4 h-4" />
+            Styleguide
           </NuxtLink>
         </nav>
       </div>
@@ -274,7 +318,12 @@ const route = useRoute()
 const config = useRuntimeConfig()
 const headers = useRequestHeaders(['cookie'])
 
-const { data: session } = await authClient.useSession(useFetch)
+const { data: session } = await authClient.useSession(
+  (url, options) => useFetch(url, {
+    ...options,
+    headers: { ...(options?.headers as Record<string, string> || {}), ...headers },
+  })
+)
 
 const { data: account } = useFetch<{ allowedPages: string[]; email: string; image: string | null }>('/api/account', { headers })
 

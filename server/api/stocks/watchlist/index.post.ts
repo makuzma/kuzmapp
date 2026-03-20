@@ -10,22 +10,15 @@ export default defineEventHandler(async (event) => {
   if (!symbol?.trim()) throw createError({ statusCode: 400, message: 'Symbol fehlt' })
 
   const id = crypto.randomUUID()
-  try {
-    await db.insert(stockWatchlist).values({
-      id,
-      userId: session.user.id,
-      symbol: symbol.trim(),
-      name: name?.trim() ?? symbol.trim(),
-      exchange: exchange?.trim() ?? '',
-      currency: currency?.trim() ?? '',
-      portfolioId: portfolioId ?? null,
-    })
-  } catch (err: any) {
-    if (err?.message?.includes('unique')) {
-      throw createError({ statusCode: 400, message: 'Bereits in der Watchlist' })
-    }
-    throw err
-  }
+  await db.insert(stockWatchlist).values({
+    id,
+    userId: session.user.id,
+    symbol: symbol.trim(),
+    name: name?.trim() ?? symbol.trim(),
+    exchange: exchange?.trim() ?? '',
+    currency: currency?.trim() ?? '',
+    portfolioId: portfolioId ?? null,
+  })
 
   return { id }
 })
