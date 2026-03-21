@@ -344,6 +344,8 @@ export const companyInfo = pgTable('company_info', {
   address: text('address').notNull().default(''),
   contactPerson: text('contact_person').notNull().default(''),
   logoPath: text('logo_path'),
+  currency: text('currency').notNull().default('CHF'),
+  dividendTax: real('dividend_tax').notNull().default(0),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 

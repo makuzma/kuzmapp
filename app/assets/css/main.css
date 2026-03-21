@@ -61,6 +61,82 @@ html, body, * {
   transition: transform 0.3s ease;
 }
 
+/* ── Modal Input Styling (global) ── */
+[data-slot="dialog-content"] input,
+[data-slot="dialog-content"] select {
+  background: rgba(255,255,255,0.6) !important;
+  border: 1.5px solid rgba(0,0,0,0.12) !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  font-family: 'SUSE', sans-serif !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+[data-slot="dialog-content"] input:focus,
+[data-slot="dialog-content"] select:focus {
+  border-color: rgba(59,130,246,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12) !important;
+  outline: none !important;
+}
+
+.dark [data-slot="dialog-content"] input,
+.dark [data-slot="dialog-content"] select {
+  background: rgba(15,30,51,0.7) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+.dark [data-slot="dialog-content"] input:focus,
+.dark [data-slot="dialog-content"] select:focus {
+  border-color: rgba(96,165,250,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(96,165,250,0.1) !important;
+}
+
+/* ── Modal Tabs ── */
+.modal-tabs {
+  display: flex;
+  background: rgba(0,0,0,0.05);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.dark .modal-tabs {
+  background: rgba(255,255,255,0.06);
+}
+
+.modal-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(0,0,0,0.4);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dark .modal-tab {
+  color: rgba(255,255,255,0.35);
+}
+
+.modal-tab--active {
+  background: #ffffff;
+  color: #1e3a5f;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+.dark .modal-tab--active {
+  background: rgba(255,255,255,0.12);
+  color: #93c5fd;
+}
+
 /* AppHeader dropdown transitions */
 .dropdown-enter-active,
 .dropdown-leave-active {

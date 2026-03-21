@@ -495,12 +495,83 @@
         </UCard>
       </section>
 
+      <!-- MODALS -->
+      <section class="space-y-4">
+        <UCard>
+          <template #header>
+            <h2 class="text-[1.925rem] italic font-instrument">Modals</h2>
+          </template>
+          <div class="space-y-4">
+            <p class="text-sm text-gray-500">Alle Modals müssen dasselbe <code>:ui</code>-Styling verwenden. Titel immer im <code>#header</code>-Slot mit <code>font-instrument italic text-[1.6rem]</code>. Footer hat Abbrechen rechts, destruktive Aktion links.</p>
+            <div class="rounded-lg bg-gray-50 dark:bg-gray-800/60 p-4 space-y-3">
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Standard-Template</p>
+              <pre class="text-xs text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap"><code>&lt;UModal
+  v-model:open="isOpen"
+  :ui="{
+    overlay: 'bg-[#0a1628]/60 backdrop-blur-md',
+    content: 'bg-white/80 dark:bg-[#0f1e33]/80 backdrop-blur-xl shadow-2xl border border-white/30 dark:border-white/10 ring-0',
+    header: 'border-b border-white/20 dark:border-white/10',
+    footer: 'border-t border-white/20 dark:border-white/10',
+  }"
+&gt;
+  &lt;template #header&gt;
+    &lt;h2 class="font-instrument italic text-[1.6rem] text-gray-900 dark:text-white"&gt;Titel&lt;/h2&gt;
+    &lt;p class="text-sm text-gray-500 dark:text-gray-400"&gt;Untertitel (optional)&lt;/p&gt;
+  &lt;/template&gt;
+  &lt;template #body&gt;
+    &lt;!-- Inhalt --&gt;
+  &lt;/template&gt;
+  &lt;template #footer&gt;
+    &lt;div class="flex items-center justify-between w-full"&gt;
+      &lt;!-- Destruktive Aktion links (optional) --&gt;
+      &lt;UButton variant="ghost" color="error" icon="i-lucide-trash-2"&gt;Löschen&lt;/UButton&gt;
+      &lt;div class="flex gap-2"&gt;
+        &lt;UButton variant="ghost" color="neutral" @click="isOpen = false"&gt;Abbrechen&lt;/UButton&gt;
+        &lt;UButton :style="{ background: '#1e3a5f' }" color="primary"&gt;Speichern&lt;/UButton&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/template&gt;
+&lt;/UModal&gt;</code></pre>
+            </div>
+            <UButton @click="demoModalOpen = true">Modal öffnen</UButton>
+            <UModal
+              v-model:open="demoModalOpen"
+              :ui="{
+                overlay: 'bg-[#0a1628]/60 backdrop-blur-md',
+                content: 'bg-white/80 dark:bg-[#0f1e33]/80 backdrop-blur-xl shadow-2xl border border-white/30 dark:border-white/10 ring-0',
+                header: 'border-b border-white/20 dark:border-white/10',
+                footer: 'border-t border-white/20 dark:border-white/10',
+              }"
+            >
+              <template #header>
+                <h2 class="font-instrument italic text-[1.6rem] text-gray-900 dark:text-white">Beispiel Modal</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Optionaler Untertitel</p>
+              </template>
+              <template #body>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Modal-Inhalt hier.</p>
+              </template>
+              <template #footer>
+                <div class="flex items-center justify-between w-full">
+                  <UButton variant="ghost" color="error" icon="i-lucide-trash-2">Löschen</UButton>
+                  <div class="flex gap-2">
+                    <UButton variant="ghost" color="neutral" @click="demoModalOpen = false">Abbrechen</UButton>
+                    <UButton :style="{ background: '#1e3a5f' }" color="primary" @click="demoModalOpen = false">Speichern</UButton>
+                  </div>
+                </div>
+              </template>
+            </UModal>
+          </div>
+        </UCard>
+      </section>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 definePageMeta({ middleware: 'auth' })
+
+const demoModalOpen = ref(false)
 
 // Inline helper components
 const SectionTitle = defineComponent({

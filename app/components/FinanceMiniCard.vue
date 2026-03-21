@@ -71,7 +71,7 @@ const props = defineProps<{
   height: 6px;
   border-radius: 6px;
   background: #e8ecf1;
-  box-shadow: inset 2px 2px 4px #cdd1d6, inset -2px -2px 4px #ffffff;
+  box-shadow: inset 1px 1px 2px #cdd1d6, inset -1px -1px 2px #ffffff;
   overflow: hidden;
 }
 

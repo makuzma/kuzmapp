@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   const rows = await db.select().from(companyInfo).limit(1)
 
   if (rows.length === 0) {
-    return { id: '', name: '', phone: '', address: '', contactPerson: '', logoPath: null }
+    return { id: '', name: '', phone: '', address: '', contactPerson: '', logoPath: null, currency: 'CHF' }
   }
 
   const row = rows[0]
@@ -20,5 +20,7 @@ export default defineEventHandler(async (event) => {
     address: row.address,
     contactPerson: row.contactPerson,
     logoPath: row.logoPath,
+    currency: row.currency,
+    dividendTax: row.dividendTax,
   }
 })

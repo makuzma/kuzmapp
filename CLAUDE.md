@@ -28,3 +28,12 @@ Der Styleguide unter `app/pages/styleguide.vue` ist die einzige Quelle der Wahrh
 - Überschriften: h1 → `font-instrument italic text-5xl`, h2 → `font-instrument italic text-[2.75rem]` (kein bold/semibold bei beiden)
 - Dark Mode: immer `dark:`-Varianten mitdefinieren
 - h1 kommt **einmal pro Seite**, h2 kann mehrfach vorkommen (als Abschnittstitel)
+
+## CSS-Qualität — Absolutes Muss
+
+Beim Bearbeiten von CSS-Blöcken mit dem Edit-Tool **immer den gesamten betroffenen Block lesen**, bevor etwas geändert wird. Es ist verboten, CSS-Properties aus einem Block herauszureissen oder eine schliessende `}` zu überschreiben. Das führt zu `Missing opening {`-Fehlern.
+
+**Konkret:**
+- Vor jedem CSS-Edit den umgebenden Block vollständig lesen
+- Beim Einfügen neuer Regeln (z.B. `:hover`) sicherstellen, dass bestehende Properties des ursprünglichen Blocks vollständig erhalten bleiben
+- Nach einem Edit gedanklich prüfen: Sind alle `{` und `}` korrekt geschlossen?

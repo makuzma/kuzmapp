@@ -3,7 +3,7 @@ import { auth } from '../../lib/auth'
 import { db } from '../../lib/db'
 import { stockWatchlist } from '../../../drizzle/schema'
 
-async function fetchAnnualDividend(symbol: string): Promise<{ dividendRate: number | null; exDividendDate: string | null }> {
+async function fetchAnnualDividend(symbol: string): Promise<{ dividendRate: number | null; exDividendDate: string | null; currentPrice: number | null }> {
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2y&events=div`
     const data = await $fetch<any>(url, {
@@ -11,13 +11,15 @@ async function fetchAnnualDividend(symbol: string): Promise<{ dividendRate: numb
     })
 
     const result = data?.chart?.result?.[0]
-    if (!result) return { dividendRate: null, exDividendDate: null }
+    if (!result) return { dividendRate: null, exDividendDate: null, currentPrice: null }
+
+    const currentPrice: number | null = result.meta?.regularMarketPrice ?? null
 
     const dividendEvents = result.events?.dividends as Record<string, { amount: number; date: number }> | undefined
-    if (!dividendEvents) return { dividendRate: null, exDividendDate: null }
+    if (!dividendEvents) return { dividendRate: null, exDividendDate: null, currentPrice }
 
     const allDivs = Object.values(dividendEvents).sort((a, b) => b.date - a.date)
-    if (!allDivs.length) return { dividendRate: null, exDividendDate: null }
+    if (!allDivs.length) return { dividendRate: null, exDividendDate: null, currentPrice }
 
     // Sum dividends from the last 365 days
     const oneYearAgo = Date.now() / 1000 - 365 * 24 * 3600
@@ -29,9 +31,9 @@ async function fetchAnnualDividend(symbol: string): Promise<{ dividendRate: numb
     const exTs = result.meta?.exDividendDate
     const exDividendDate = exTs ? new Date(exTs * 1000).toISOString().slice(0, 10) : null
 
-    return { dividendRate: annualRate > 0 ? annualRate : null, exDividendDate }
+    return { dividendRate: annualRate > 0 ? annualRate : null, exDividendDate, currentPrice }
   } catch {
-    return { dividendRate: null, exDividendDate: null }
+    return { dividendRate: null, exDividendDate: null, currentPrice: null }
   }
 }
 
@@ -62,7 +64,10 @@ export default defineEventHandler(async (event) => {
 
   const results = await Promise.all(
     Array.from(symbolMap.entries()).map(async ([symbol, { firstRow, totalShares }]) => {
-      const { dividendRate, exDividendDate } = await fetchAnnualDividend(symbol)
+      const { dividendRate, exDividendDate, currentPrice } = await fetchAnnualDividend(symbol)
+      const yieldPct = dividendRate != null && currentPrice != null && currentPrice > 0
+        ? (dividendRate / currentPrice) * 100
+        : null
       return {
         id: firstRow.id,
         symbol,
@@ -72,6 +77,7 @@ export default defineEventHandler(async (event) => {
         dividendRate,
         annualDividend: dividendRate != null ? dividendRate * totalShares : null,
         exDividendDate,
+        yield: yieldPct,
         portfolioId: firstRow.portfolioId,
       }
     })

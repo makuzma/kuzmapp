@@ -35,6 +35,10 @@
             <UInput v-model="companyForm.contactPerson" placeholder="Ansprechpartner" class="w-full" />
           </UFormField>
 
+          <UFormField label="Währung">
+            <USelect v-model="companyForm.currency" :items="currencyOptions" class="w-full" />
+          </UFormField>
+
           <UFormField label="Logo">
             <div class="space-y-2">
               <img v-if="companyForm.logoPath" :src="companyForm.logoPath" alt="Firmenlogo" class="h-16 object-contain rounded border border-gray-200 dark:border-gray-700" />
@@ -139,21 +143,80 @@
         </div>
       </UCard>
 
+      <!-- Anlageklassen -->
+      <UCard>
+        <template #header>
+          <h2 class="font-semibold text-lg">Anlageklassen</h2>
+          <p class="text-sm text-gray-500 mt-0.5">Einstellungen pro Anlagekategorie</p>
+        </template>
+
+        <div class="space-y-4">
+          <!-- Kategorie-Tabs -->
+          <div class="flex gap-2 flex-wrap">
+            <button
+              v-for="cat in assetCategories"
+              :key="cat.key"
+              class="asset-tab"
+              :class="{ 'asset-tab--active': activeAssetTab === cat.key }"
+              @click="activeAssetTab = cat.key"
+            >
+              <UIcon :name="cat.icon" class="w-4 h-4" />
+              {{ cat.label }}
+            </button>
+          </div>
+
+          <USeparator />
+
+          <!-- Aktien -->
+          <div v-if="activeAssetTab === 'aktien'" class="space-y-4">
+            <UAlert v-if="assetSettingsAlert.visible" :color="assetSettingsAlert.color" :description="assetSettingsAlert.message" @close="assetSettingsAlert.visible = false" />
+            <UFormField label="Effektive Dividendensteuer (%)" description="Wird bei der Dividendenberechnung abgezogen (z.B. 35 für Schweizer Verrechnungssteuer)">
+              <div class="flex items-center gap-2">
+                <UInput v-model="assetForm.dividendTax" type="number" step="0.1" min="0" max="100" placeholder="z.B. 35" class="w-40" />
+                <span class="text-sm text-gray-500">%</span>
+              </div>
+            </UFormField>
+            <div class="flex justify-end pt-2">
+              <UButton :loading="savingAssetSettings" @click="saveAssetSettings">Speichern</UButton>
+            </div>
+          </div>
+
+          <!-- Edelmetalle (Platzhalter) -->
+          <div v-else-if="activeAssetTab === 'edelmetalle'" class="text-sm text-gray-400 py-4 text-center">
+            Noch keine Einstellungen verfügbar
+          </div>
+
+          <!-- Weitere Kategorien -->
+          <div v-else class="text-sm text-gray-400 py-4 text-center">
+            Noch keine Einstellungen verfügbar
+          </div>
+        </div>
+      </UCard>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 definePageMeta({ middleware: ['auth', 'page-access'], requiredPage: 'settings' })
+const { confirm } = useConfirm()
 
 // --- Firmeninfo ---
-type CompanyInfoData = { id: string; name: string; phone: string; address: string; contactPerson: string; logoPath: string | null }
+type CompanyInfoData = { id: string; name: string; phone: string; address: string; contactPerson: string; logoPath: string | null; currency: string; dividendTax: number }
+
+const currencyOptions = [
+  { label: 'CHF – Schweizer Franken', value: 'CHF' },
+  { label: 'EUR – Euro', value: 'EUR' },
+  { label: 'USD – US-Dollar', value: 'USD' },
+  { label: 'GBP – Britisches Pfund', value: 'GBP' },
+]
 
 const companyForm = reactive({
   name: '',
   phone: '',
   address: '',
   contactPerson: '',
+  currency: 'CHF',
   logoPath: null as string | null,
 })
 
@@ -162,6 +225,9 @@ const uploadingLogo = ref(false)
 const logoFileInput = ref<HTMLInputElement | null>(null)
 const companyInfoAlert = reactive({ visible: false, color: 'success' as 'success' | 'error', message: '' })
 
+// --- Anlageklassen (hier deklariert, damit es bei companyInfoData-Init verfügbar ist) ---
+const assetForm = reactive({ dividendTax: '0' })
+
 const { data: companyInfoData } = await useFetch<CompanyInfoData>('/api/settings/company')
 
 if (companyInfoData.value) {
@@ -169,7 +235,9 @@ if (companyInfoData.value) {
   companyForm.phone = companyInfoData.value.phone
   companyForm.address = companyInfoData.value.address
   companyForm.contactPerson = companyInfoData.value.contactPerson
+  companyForm.currency = companyInfoData.value.currency ?? 'CHF'
   companyForm.logoPath = companyInfoData.value.logoPath
+  assetForm.dividendTax = String(companyInfoData.value.dividendTax ?? 0)
 }
 
 async function saveCompanyInfo() {
@@ -182,6 +250,7 @@ async function saveCompanyInfo() {
         phone: companyForm.phone,
         address: companyForm.address,
         contactPerson: companyForm.contactPerson,
+        currency: companyForm.currency,
       },
     })
     companyForm.logoPath = updated.logoPath
@@ -227,7 +296,8 @@ async function uploadLogo(event: Event) {
 type Portfolio = { id: string; name: string; color: string; portfolioType: string; sortOrder: number; stockCount: number; metalCount: number }
 
 const portfolioTypeOptions = [
-  { label: 'Aktienportfolio', value: 'Aktienportfolio' },
+  { label: 'Aktien', value: 'Aktien' },
+  { label: 'Edelmetalle', value: 'Edelmetalle' },
   { label: 'Säule 3A', value: 'Säule 3A' },
   { label: 'Bankkonto', value: 'Bankkonto' },
   { label: 'Lending', value: 'Lending' },
@@ -246,7 +316,21 @@ const portfolioColors = [
 ]
 
 const { data: portfoliosData, refresh: refreshPortfolios } = await useFetch<Portfolio[]>('/api/portfolios')
-const portfolios = computed(() => portfoliosData.value ?? [])
+const { data: portfolioValues } = await useFetch<Record<string, number>>('/api/finance/portfolio-values')
+const categoryOrder = ['Aktien', 'Edelmetalle', 'Säule 3A', 'Bankkonto', 'Lending']
+
+const portfolios = computed(() => {
+  const ps = portfoliosData.value ?? []
+  const vals = portfolioValues.value ?? {}
+  return [...ps].sort((a, b) => {
+    const ai = categoryOrder.indexOf(a.portfolioType)
+    const bi = categoryOrder.indexOf(b.portfolioType)
+    const aIdx = ai === -1 ? 999 : ai
+    const bIdx = bi === -1 ? 999 : bi
+    if (aIdx !== bIdx) return aIdx - bIdx
+    return (vals[b.id] ?? 0) - (vals[a.id] ?? 0)
+  })
+})
 
 const newPortfolio = reactive({ name: '', color: 'blue', portfolioType: '' })
 const addingPortfolio = ref(false)
@@ -289,9 +373,90 @@ async function addPortfolio() {
 }
 
 async function deletePortfolio(id: string) {
+  const ok = await confirm('Dieses Portfolio wirklich löschen? Alle zugehörigen Aktien werden dem Portfolio entzogen.', 'Portfolio löschen')
+  if (!ok) return
   deletingPortfolio.value = id
   await $fetch(`/api/portfolios/${id}`, { method: 'DELETE' })
   deletingPortfolio.value = null
   await refreshPortfolios()
 }
+
+// --- Anlageklassen ---
+const assetCategories = [
+  { key: 'aktien',      label: 'Aktien',      icon: 'i-lucide-trending-up' },
+  { key: 'edelmetalle', label: 'Edelmetalle',  icon: 'i-lucide-gem' },
+  { key: 'saule3a',     label: 'Säule 3A',     icon: 'i-lucide-piggy-bank' },
+  { key: 'bankkonto',   label: 'Bankkonto',    icon: 'i-lucide-landmark' },
+  { key: 'lending',     label: 'Lending',      icon: 'i-lucide-percent' },
+]
+const activeAssetTab = ref('aktien')
+const savingAssetSettings = ref(false)
+const assetSettingsAlert = reactive({ visible: false, color: 'success' as 'success' | 'error', message: '' })
+
+async function saveAssetSettings() {
+  savingAssetSettings.value = true
+  try {
+    await $fetch('/api/settings/company', {
+      method: 'PUT',
+      body: {
+        name: companyForm.name,
+        phone: companyForm.phone,
+        address: companyForm.address,
+        contactPerson: companyForm.contactPerson,
+        currency: companyForm.currency,
+        dividendTax: Number(assetForm.dividendTax),
+      },
+    })
+    assetSettingsAlert.color = 'success'
+    assetSettingsAlert.message = 'Einstellungen gespeichert'
+    assetSettingsAlert.visible = true
+  } catch {
+    assetSettingsAlert.color = 'error'
+    assetSettingsAlert.message = 'Fehler beim Speichern'
+    assetSettingsAlert.visible = true
+  } finally {
+    savingAssetSettings.value = false
+  }
+}
 </script>
+
+<style scoped>
+.asset-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  background: var(--ui-bg-muted, #f3f4f6);
+  color: var(--ui-text-muted, #6b7280);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.asset-tab:hover {
+  background: var(--ui-bg-elevated, #e5e7eb);
+}
+
+.asset-tab--active {
+  background: var(--ui-primary, #3b82f6);
+  color: #fff;
+  border-color: transparent;
+}
+
+.dark .asset-tab {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5);
+}
+
+.dark .asset-tab:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.dark .asset-tab--active {
+  background: var(--ui-primary, #3b82f6);
+  color: #fff;
+}
+</style>

@@ -7,14 +7,14 @@ export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session) throw createError({ statusCode: 401 })
 
-  const { name, phone, address, contactPerson } = await readBody(event)
+  const { name, phone, address, contactPerson, currency, dividendTax } = await readBody(event)
 
   const rows = await db.select().from(companyInfo).limit(1)
 
   if (rows.length > 0) {
     const [updated] = await db
       .update(companyInfo)
-      .set({ name: name ?? '', phone: phone ?? '', address: address ?? '', contactPerson: contactPerson ?? '', updatedAt: new Date() })
+      .set({ name: name ?? '', phone: phone ?? '', address: address ?? '', contactPerson: contactPerson ?? '', currency: currency ?? 'CHF', dividendTax: dividendTax ?? 0, updatedAt: new Date() })
       .returning()
     return {
       id: updated.id,
@@ -23,11 +23,13 @@ export default defineEventHandler(async (event) => {
       address: updated.address,
       contactPerson: updated.contactPerson,
       logoPath: updated.logoPath,
+      currency: updated.currency,
+      dividendTax: updated.dividendTax,
     }
   } else {
     const [inserted] = await db
       .insert(companyInfo)
-      .values({ id: randomUUID(), name: name ?? '', phone: phone ?? '', address: address ?? '', contactPerson: contactPerson ?? '' })
+      .values({ id: randomUUID(), name: name ?? '', phone: phone ?? '', address: address ?? '', contactPerson: contactPerson ?? '', currency: currency ?? 'CHF', dividendTax: dividendTax ?? 0 })
       .returning()
     return {
       id: inserted.id,
@@ -36,6 +38,8 @@ export default defineEventHandler(async (event) => {
       address: inserted.address,
       contactPerson: inserted.contactPerson,
       logoPath: inserted.logoPath,
+      currency: inserted.currency,
+      dividendTax: inserted.dividendTax,
     }
   }
 })
