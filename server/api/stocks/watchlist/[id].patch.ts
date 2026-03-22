@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   if (!session) throw createError({ statusCode: 401 })
 
   const id = getRouterParam(event, 'id')!
-  const { shares, purchasePrice, purchaseDate, portfolioId } = await readBody(event)
+  const { shares, purchasePrice, purchaseDate, portfolioId, sector } = await readBody(event)
 
   const [existing] = await db.select().from(stockWatchlist).where(eq(stockWatchlist.id, id))
   if (!existing) throw createError({ statusCode: 404 })
@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
       ...(purchasePrice !== undefined ? { purchasePrice: purchasePrice ?? null } : {}),
       ...(purchaseDate !== undefined ? { purchaseDate: purchaseDate ?? null } : {}),
       ...(portfolioId !== undefined ? { portfolioId: portfolioId ?? null } : {}),
+      ...(sector !== undefined ? { sector: sector || null } : {}),
     })
     .where(eq(stockWatchlist.id, id))
 

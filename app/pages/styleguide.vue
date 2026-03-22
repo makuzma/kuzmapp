@@ -420,6 +420,57 @@
         </div>
       </section>
 
+      <!-- MORPHIC ICON BUTTONS -->
+      <section class="space-y-4">
+        <SectionTitle>Icon Buttons · Neumorphic</SectionTitle>
+        <UCard>
+          <div class="flex flex-wrap items-end gap-8">
+            <!-- Normal -->
+            <div class="flex flex-col items-center gap-2">
+              <button class="btn-morphic">
+                <UIcon name="i-lucide-plus" class="w-3.5 h-3.5 text-gray-700" />
+              </button>
+              <span class="text-xs text-gray-400">Default</span>
+            </div>
+            <!-- Pressed -->
+            <div class="flex flex-col items-center gap-2">
+              <button class="btn-morphic btn-morphic--pressed">
+                <UIcon name="i-lucide-plus" class="w-3.5 h-3.5 text-gray-700" />
+              </button>
+              <span class="text-xs text-gray-400">Pressed</span>
+            </div>
+            <!-- With chart icon -->
+            <div class="flex flex-col items-center gap-2">
+              <button class="btn-morphic">
+                <UIcon name="i-lucide-chart-candlestick" class="w-3.5 h-3.5 text-gray-700" />
+              </button>
+              <span class="text-xs text-gray-400">Chart</span>
+            </div>
+            <!-- With gem icon -->
+            <div class="flex flex-col items-center gap-2">
+              <button class="btn-morphic">
+                <UIcon name="i-lucide-gem" class="w-3.5 h-3.5 text-gray-700" />
+              </button>
+              <span class="text-xs text-gray-400">Gem</span>
+            </div>
+            <!-- Camera -->
+            <div class="flex flex-col items-center gap-2">
+              <button class="btn-morphic">
+                <UIcon name="i-lucide-camera" class="w-3.5 h-3.5 text-gray-700" />
+              </button>
+              <span class="text-xs text-gray-400">Camera</span>
+            </div>
+            <!-- Pencil -->
+            <div class="flex flex-col items-center gap-2">
+              <button class="btn-morphic">
+                <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5 text-gray-700" />
+              </button>
+              <span class="text-xs text-gray-400">Pencil</span>
+            </div>
+          </div>
+        </UCard>
+      </section>
+
       <!-- AVATARE -->
       <section class="space-y-4">
         <SectionTitle>Avatare</SectionTitle>
@@ -564,6 +615,92 @@
         </UCard>
       </section>
 
+      <!-- FINANCE BREAKDOWN BARS -->
+      <section class="space-y-4">
+        <UCard>
+          <template #header>
+            <h2 class="text-[1.925rem] italic font-instrument">Finance Breakdown Bars</h2>
+            <p class="text-sm text-gray-500 mt-1">Horizontale Stacked-Bar-Komponente für Kategorie-Breakdowns in der Finance-View (Aktien: Währung / Typ / Sektor; Edelmetalle: Münzen/Barren / Einheit / Münzentyp). Wird im Collapsed-View der <code>FinanceBrokerStack</code>-Komponente eingesetzt.</p>
+          </template>
+          <div class="space-y-6">
+
+            <!-- Live Demo -->
+            <div class="space-y-2">
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Live Demo</p>
+              <div class="rounded-xl p-4 space-y-4" style="background: #1e3a5f;">
+                <!-- Bar 1: Währung -->
+                <div class="breakdown-group">
+                  <div class="breakdown-labels-row font-[SUSE_Mono]">
+                    <span v-for="item in sgDemoBreakdown1" :key="item.label" :style="{ width: item.pct + '%', color: item.color, opacity: sgSelected1 && sgSelected1 !== item.label ? 0.35 : 1, cursor: 'pointer', transition: 'opacity 0.2s' }" @click="sgSelected1 = sgSelected1 === item.label ? null : item.label">{{ item.label }}</span>
+                  </div>
+                  <div class="breakdown-stacked-bar">
+                    <div v-for="item in sgDemoBreakdown1" :key="item.label" class="breakdown-segment" :style="{ width: item.pct + '%', background: item.color, cursor: 'pointer', opacity: sgSelected1 && sgSelected1 !== item.label ? 0.25 : 1, filter: sgSelected1 === item.label ? 'brightness(1.35)' : 'none', transition: 'opacity 0.2s, filter 0.2s' }" @click="sgSelected1 = sgSelected1 === item.label ? null : item.label">
+                      <span class="breakdown-segment-label">{{ item.pct.toFixed(0) }}%</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Bar 2: Typ -->
+                <div class="breakdown-group">
+                  <div class="breakdown-labels-row font-[SUSE_Mono]">
+                    <span v-for="item in sgDemoBreakdown2" :key="item.label" :style="{ width: item.pct + '%', color: item.color, opacity: sgSelected2 && sgSelected2 !== item.label ? 0.35 : 1, cursor: 'pointer', transition: 'opacity 0.2s' }" @click="sgSelected2 = sgSelected2 === item.label ? null : item.label">{{ item.label }}</span>
+                  </div>
+                  <div class="breakdown-stacked-bar">
+                    <div v-for="item in sgDemoBreakdown2" :key="item.label" class="breakdown-segment" :style="{ width: item.pct + '%', background: item.color, cursor: 'pointer', opacity: sgSelected2 && sgSelected2 !== item.label ? 0.25 : 1, filter: sgSelected2 === item.label ? 'brightness(1.35)' : 'none', transition: 'opacity 0.2s, filter 0.2s' }" @click="sgSelected2 = sgSelected2 === item.label ? null : item.label">
+                      <span class="breakdown-segment-label">{{ item.pct.toFixed(0) }}%</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Bar 3: Kategorien mit Liste -->
+                <div class="breakdown-group">
+                  <div class="breakdown-labels-row font-[SUSE_Mono]">
+                    <span style="color: rgba(255,255,255,0.6)">Kategorie</span>
+                  </div>
+                  <div class="breakdown-stacked-bar">
+                    <div v-for="item in sgDemoBreakdown3" :key="item.label" class="breakdown-segment" :style="{ width: item.pct + '%', background: item.color, cursor: 'pointer', opacity: (sgHovered3 || sgSelected3) && sgHovered3 !== item.label && sgSelected3 !== item.label ? 0.25 : 1, filter: sgHovered3 === item.label || sgSelected3 === item.label ? 'brightness(1.35)' : 'none', transition: 'opacity 0.2s, filter 0.2s' }" @mouseenter="sgHovered3 = item.label" @mouseleave="sgHovered3 = null" @click="sgSelected3 = sgSelected3 === item.label ? null : item.label" />
+                  </div>
+                </div>
+                <div class="breakdown-sector-list font-[SUSE_Mono]">
+                  <div v-for="item in sgDemoBreakdown3" :key="item.label" class="breakdown-sector-row" @mouseenter="sgHovered3 = item.label" @mouseleave="sgHovered3 = null" @click="sgSelected3 = sgSelected3 === item.label ? null : item.label">
+                    <span class="breakdown-sector-dot" :style="{ background: item.color, transform: sgSelected3 === item.label ? 'scale(1.5)' : 'scale(1)', transition: 'transform 0.2s' }" />
+                    <span class="breakdown-sector-name" :style="{ opacity: (sgHovered3 || sgSelected3) && sgHovered3 !== item.label && sgSelected3 !== item.label ? 0.35 : 1, fontWeight: sgSelected3 === item.label ? 700 : 400 }">{{ item.label }}</span>
+                    <span class="breakdown-sector-pct" :style="{ color: item.color, opacity: (sgHovered3 || sgSelected3) && sgHovered3 !== item.label && sgSelected3 !== item.label ? 0.35 : 1 }">{{ item.pct.toFixed(1) }}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Regeln -->
+            <div class="space-y-2">
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Regeln</p>
+              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1 list-disc list-inside">
+                <li>Segment-Klick togglet Filter; nochmals klicken hebt Filter auf</li>
+                <li>Aktives Segment: <code>filter: brightness(1.35)</code> — kein <code>scaleY</code> (verzerrt Text)</li>
+                <li>Inaktive Segmente: <code>opacity: 0.25</code> (Bar) / <code>0.35</code> (Labels)</li>
+                <li>Dritte Bar (Kategorien) mit Liste darunter: Hover bidirektional (<code>hoveredXxx</code> ref)</li>
+                <li>Wrapper: <code>FinanceBrokerStack</code> mit <code>#collapsed-view</code> Slot — scrollt via <code>OverlayScrollbarsComponent</code></li>
+                <li>Hintergrund immer <code>#1e3a5f</code>; Labels <code>font-[SUSE_Mono]</code></li>
+              </ul>
+            </div>
+
+            <!-- CSS-Klassen -->
+            <div class="rounded-lg bg-gray-50 dark:bg-gray-800/60 p-4 space-y-3">
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Verwendete CSS-Klassen</p>
+              <pre class="text-xs text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap"><code>.breakdown-group          — Wrapper pro Bar-Gruppe (labels + bar)
+.breakdown-labels-row     — Flex-Row der Label-Spans (width = pct%)
+.breakdown-stacked-bar    — Horizontaler Bar-Container
+.breakdown-segment        — Einzelnes Segment (width = pct%, background = color)
+.breakdown-segment-label  — Prozent-Text im Segment
+.breakdown-sector-list    — Liste unter der dritten Bar
+.breakdown-sector-row     — Zeile in der Liste (dot + name + pct)
+.breakdown-sector-dot     — Farbiger Punkt
+.breakdown-sector-name    — Kategoriename
+.breakdown-sector-pct     — Prozentwert rechts</code></pre>
+            </div>
+
+          </div>
+        </UCard>
+      </section>
+
     </div>
   </div>
 </template>
@@ -572,6 +709,28 @@
 definePageMeta({ middleware: 'auth' })
 
 const demoModalOpen = ref(false)
+
+// ── Finance Breakdown Bars Demo ──
+const sgSelected1 = ref<string | null>(null)
+const sgSelected2 = ref<string | null>(null)
+const sgSelected3 = ref<string | null>(null)
+const sgHovered3 = ref<string | null>(null)
+const sgDemoBreakdown1 = [
+  { label: 'CHF', pct: 54, color: '#4a9eff' },
+  { label: 'USD', pct: 31, color: '#a78bfa' },
+  { label: 'EUR', pct: 15, color: '#34d399' },
+]
+const sgDemoBreakdown2 = [
+  { label: 'Aktie', pct: 72, color: '#60a5fa' },
+  { label: 'ETF', pct: 28, color: '#f59e0b' },
+]
+const sgDemoBreakdown3 = [
+  { label: 'Technology', pct: 38.2, color: '#4a9eff' },
+  { label: 'Healthcare', pct: 21.5, color: '#34d399' },
+  { label: 'Financials', pct: 17.8, color: '#f59e0b' },
+  { label: 'Energy', pct: 13.1, color: '#f87171' },
+  { label: 'Industrials', pct: 9.4, color: '#a78bfa' },
+]
 
 // Inline helper components
 const SectionTitle = defineComponent({
@@ -857,5 +1016,41 @@ const radiusExamples = [
   padding: 3px 8px; border-radius: 50px;
   font-size: 11px; font-weight: 600;
   background: #eafaf0; color: #27ae60;
+}
+
+/* ── Morphic Icon Buttons ── */
+.btn-morphic {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow:
+    2px 2px 6px rgba(0, 0, 0, 0.13),
+    -2px -2px 5px rgba(255, 255, 255, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+.btn-morphic:hover {
+  box-shadow:
+    3px 3px 8px rgba(0, 0, 0, 0.16),
+    -2px -2px 6px rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+}
+.btn-morphic:active,
+.btn-morphic--pressed,
+.btn-morphic--pressed:hover {
+  box-shadow:
+    inset 2px 2px 5px rgba(0, 0, 0, 0.18),
+    inset -1px -1px 3px rgba(255, 255, 255, 0.75),
+    -2px -2px 5px rgba(255, 255, 255, 0.8),
+    2px 2px 6px rgba(0, 0, 0, 0.13);
+  transform: scale(0.95);
 }
 </style>

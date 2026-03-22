@@ -65,10 +65,11 @@ export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session) throw createError({ statusCode: 401 })
 
-  const [portfolios, stocks, metalRows, fx, companySettings] = await Promise.all([
+  const [portfolios, stocks, metalRows, cashRows, fx, companySettings] = await Promise.all([
     $fetch<PortfolioItem[]>('/api/portfolios', { headers: event.headers }),
     $fetch<StockItem[]>('/api/stocks/watchlist', { headers: event.headers }),
     db.select().from(metalHolding).where(eq(metalHolding.userId, session.user.id)),
+    $fetch<any[]>('/api/finance/cash', { headers: event.headers }).catch(() => [] as any[]),
     $fetch<Record<string, number>>('/api/stocks/fx', { headers: event.headers }).catch(() => ({} as Record<string, number>)),
     $fetch<{ currency: string }>('/api/settings/company', { headers: event.headers }).catch(() => ({ currency: 'CHF' })),
   ])
@@ -140,16 +141,54 @@ export default defineEventHandler(async (event) => {
     byPortfolio[m.portfolioId].changeWeight += val
   }
 
+  // Cash: pro Portfolio dazurechnen (kein changePct)
+  // Schulden-Portfolios werden negativ gewertet
+  // Lending-Portfolios: nur aktuelles Jahr, Wert = lendingKapitalTotal
+  const DEBT_TYPES = new Set(['Schulden'])
+  const CURRENT_YEAR = new Date().getFullYear()
+  for (const c of cashRows) {
+    if (!c.portfolioId) continue
+    const portfolio = portfolios.find(p => p.id === c.portfolioId)
+    const isDebt = DEBT_TYPES.has(portfolio?.portfolioType ?? '')
+    const isLending = portfolio?.portfolioType === 'Lending'
+    if (isLending) {
+      if (c.lendingJahr !== CURRENT_YEAR) continue
+      const val = convertTo(c.lendingKapitalTotal ?? c.lendingKapital ?? c.amount, c.currency)
+      ensure(c.portfolioId)
+      byPortfolio[c.portfolioId].value += val
+    } else {
+      const val = convertTo(c.amount, c.currency)
+      ensure(c.portfolioId)
+      byPortfolio[c.portfolioId].value += isDebt ? -Math.abs(val) : val
+    }
+  }
+
   // Group portfolios by type, sum values
   const groups: Record<string, {
     type: string; value: number; changeWeightedSum: number; changeWeight: number; color: string; count: number
   }> = {}
 
+  // Normalize portfolio types to display categories
+  const TYPE_MAP: Record<string, string> = {
+    'Säule 3A': 'Vorsorge',
+    'Bankkonto': 'Cash',
+  }
+  const CATEGORY_ORDER = ['Aktien', 'Vorsorge', 'Lending', 'Schulden', 'Cash', 'Edelmetalle']
+  const CATEGORY_COLORS: Record<string, string> = {
+    'Aktien':     '#3b82f6',
+    'Vorsorge':   '#22c55e',
+    'Lending':    '#f97316',
+    'Schulden':   '#ef4444',
+    'Cash':       '#6b7280',
+    'Edelmetalle':'#eab308',
+  }
+
   for (const p of portfolios) {
-    const type = p.portfolioType?.trim() || p.name
+    const rawType = p.portfolioType?.trim() || p.name
+    const type = TYPE_MAP[rawType] ?? rawType
     const pv = byPortfolio[p.id]
     if (!groups[type]) {
-      groups[type] = { type, value: 0, changeWeightedSum: 0, changeWeight: 0, color: COLOR_HEX[p.color] ?? '#6b7280', count: 0 }
+      groups[type] = { type, value: 0, changeWeightedSum: 0, changeWeight: 0, color: CATEGORY_COLORS[type] ?? COLOR_HEX[p.color] ?? '#6b7280', count: 0 }
     }
     groups[type].value += pv?.value ?? 0
     groups[type].changeWeightedSum += pv?.changeWeightedSum ?? 0
@@ -157,7 +196,15 @@ export default defineEventHandler(async (event) => {
     groups[type].count++
   }
 
+  // Ensure all 6 categories always appear, in fixed order
+  for (const cat of CATEGORY_ORDER) {
+    if (!groups[cat]) {
+      groups[cat] = { type: cat, value: 0, changeWeightedSum: 0, changeWeight: 0, color: CATEGORY_COLORS[cat], count: 0 }
+    }
+  }
+
   const result = Object.values(groups)
+    .filter(g => CATEGORY_ORDER.includes(g.type))
     .map(g => ({
       type:      g.type,
       value:     Math.round(g.value),
@@ -165,7 +212,7 @@ export default defineEventHandler(async (event) => {
       color:     g.color,
       count:     g.count,
     }))
-    .sort((a, b) => b.value - a.value)
+    .sort((a, b) => CATEGORY_ORDER.indexOf(a.type) - CATEGORY_ORDER.indexOf(b.type))
 
   const totalValue = result.reduce((s, g) => s + g.value, 0)
   const totalChangePct = totalValue > 0

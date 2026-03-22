@@ -29,6 +29,10 @@ Der Styleguide unter `app/pages/styleguide.vue` ist die einzige Quelle der Wahrh
 - Dark Mode: immer `dark:`-Varianten mitdefinieren
 - h1 kommt **einmal pro Seite**, h2 kann mehrfach vorkommen (als Abschnittstitel)
 
+## Konsistenz zwischen Sections — Absolutes Muss
+
+Alle Listen-Einträge innerhalb von Cash-Cards (Bargeld, Säule 3A, Lending, Schulden etc.) **müssen immer dasselbe Layout** verwenden: `cash-entry` mit `cash-entry-left` und `cash-entry-right`. Keine abweichenden Wrapper-Klassen oder zusätzliche Zeilen dazwischen. Wenn eine neue Section hinzukommt, immer an einem bestehenden Eintrag (z.B. Frankly in Säule 3A) orientieren und exakt denselben Markup-Stil übernehmen.
+
 ## CSS-Qualität — Absolutes Muss
 
 Beim Bearbeiten von CSS-Blöcken mit dem Edit-Tool **immer den gesamten betroffenen Block lesen**, bevor etwas geändert wird. Es ist verboten, CSS-Properties aus einem Block herauszureissen oder eine schliessende `}` zu überschreiben. Das führt zu `Missing opening {`-Fehlern.

@@ -82,6 +82,7 @@ export default defineEventHandler(async (event) => {
         purchasePrice: r.purchasePrice,
         purchaseDate: r.purchaseDate,
         portfolioId: r.portfolioId,
+        sector: r.sector,
         createdAt: r.createdAt,
       })),
     }

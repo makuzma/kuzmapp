@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session) throw createError({ statusCode: 401 })
 
-  const { name, color, portfolioType } = await readBody(event)
+  const { name, color, portfolioType, groupId } = await readBody(event)
   if (!name?.trim()) throw createError({ statusCode: 400, message: 'Name fehlt' })
 
   const id = crypto.randomUUID()
@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
     color: color ?? 'blue',
     portfolioType: portfolioType ?? '',
     sortOrder: 0,
+    groupId: groupId || null,
   })
 
   return { id }

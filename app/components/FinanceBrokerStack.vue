@@ -1,23 +1,35 @@
 <template>
-  <div class="broker-stack">
-    <div class="broker-sections-wrap">
+  <div class="broker-stack" :class="{ 'broker-stack--collapsed': collapsed }">
+    <div class="broker-sections-wrap" :class="{ 'broker-sections-wrap--collapsed': collapsed }">
       <div
         v-for="section in sections"
         :key="section.id"
         class="broker-section"
         :class="section.extraClass"
-        :style="{ background: section.color, height: visible ? section.height : '0px', cursor: 'pointer' }"
-        @click="$emit('select', section.id)"
+        :style="{ background: section.color, height: collapsed ? '22px' : (visible ? section.height : '0px'), cursor: 'pointer', flexShrink: 0 }"
+        @click="onSectionClick(section.id)"
       >
-        <slot name="section" :section="section">
-          <div class="broker-name">{{ section.label }}</div>
-          <div class="broker-bottom">
-            <div class="broker-value font-[SUSE_Mono]">
-              <FlipNumber :value="Math.round(section.value).toLocaleString('de-CH')" />
+        <div class="broker-section-content" :class="{ 'broker-section-content--blurred': selectedId && section.id !== selectedId, 'broker-section-content--hidden': collapsed }">
+          <slot name="section" :section="section">
+            <div class="broker-name">{{ section.label }}</div>
+            <div class="broker-bottom">
+              <div class="broker-value font-[SUSE_Mono]">
+                <FlipNumber :value="Math.round(section.value).toLocaleString('de-CH')" />
+              </div>
             </div>
-          </div>
-        </slot>
+          </slot>
+        </div>
       </div>
+      <Transition name="breakdown">
+        <OverlayScrollbarsComponent
+          v-if="collapsed && $slots['collapsed-view']"
+          :options="{ scrollbars: { autoHide: 'scroll', autoHideDelay: 600 } }"
+          class="broker-collapsed-overlay"
+          defer
+        >
+          <slot name="collapsed-view" />
+        </OverlayScrollbarsComponent>
+      </Transition>
     </div>
     <div class="broker-total font-[SUSE_Mono]" @click="$emit('reset')">
       <div v-if="cashTotal != null && cashTotal > 0" class="broker-total-cash">
@@ -26,7 +38,9 @@
         <span v-if="cashPercent != null" class="broker-total-cash-pct">{{ cashPercent.toFixed(1) }}%</span>
       </div>
       <div class="broker-total-row">
-        <UIcon v-if="icon" :name="icon" class="broker-total-icon" />
+        <button class="btn-morphic" :class="{ 'btn-morphic--pressed': collapsed }" @click.stop="collapsed = !collapsed">
+          <UIcon v-if="icon" :name="icon" class="broker-collapse-btn-icon" />
+        </button>
         <FlipNumber :value="Math.round(totalValue).toLocaleString('de-CH')" />
       </div>
     </div>
@@ -34,6 +48,8 @@
 </template>
 
 <script setup lang="ts">
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
+
 interface Section {
   id: string
   color: string
@@ -50,12 +66,19 @@ defineProps<{
   icon?: string
   cashTotal?: number
   cashPercent?: number
+  selectedId?: string | null
 }>()
 
-defineEmits<{
-  select: [id: string]
-  reset: []
-}>()
+const collapsed = ref(false)
+
+const emit = defineEmits<{ select: [id: string]; reset: []; collapse: [value: boolean] }>()
+
+function onSectionClick(id: string) {
+  if (collapsed.value) collapsed.value = false
+  emit('select', id)
+}
+
+watch(collapsed, v => emit('collapse', v))
 </script>
 
 <style scoped>
@@ -83,19 +106,33 @@ defineEmits<{
 
 .broker-section {
   padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  display: block;
   border-radius: 16px;
   position: relative;
   margin-bottom: -12px;
   min-height: 0;
-  transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease;
-  overflow: visible;
+  transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease, opacity 0.3s ease;
+  overflow: hidden;
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
 
 .broker-section:hover { filter: brightness(1.12); }
+
+.broker-section-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+.broker-section-content--blurred {
+  filter: blur(2px);
+  opacity: 0.6;
+}
+.broker-section-content--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
 .broker-section:first-child { z-index: 3; border-radius: 0 16px 16px 16px; overflow: hidden; }
 .broker-section:nth-child(2) { z-index: 2; border-radius: 0 0 16px 16px; }
 .broker-section:nth-child(3) { z-index: 1; border-radius: 0 0 16px 16px; }
@@ -117,7 +154,7 @@ defineEmits<{
   flex-direction: column;
   gap: 1px;
   cursor: pointer;
-  transition: filter 0.2s ease;
+  transition: filter 0.2s ease, height 0.7s cubic-bezier(0.4, 0, 0.2, 1), padding 0.5s ease;
 }
 .broker-total:hover { filter: brightness(1.35); }
 
@@ -154,6 +191,29 @@ defineEmits<{
   opacity: 0.6;
 }
 
+.broker-collapse-btn-icon {
+  width: 14px;
+  height: 14px;
+  color: #1e3a5f;
+}
+
+/* ── Collapsed overlay ── */
+.broker-sections-wrap--collapsed {
+  overflow: hidden;
+}
+.broker-collapsed-overlay {
+  flex: 1;
+  padding: 50px 14px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.breakdown-enter-active, .breakdown-leave-active { transition: opacity 0.3s ease; }
+.breakdown-enter-from, .breakdown-leave-to { opacity: 0; }
+
 /* ── Default slot content ── */
 .broker-name {
   font-size: 11px;
@@ -168,7 +228,11 @@ defineEmits<{
   flex-direction: column;
   align-items: flex-end;
   width: 100%;
-  margin-top: auto;
+  position: absolute;
+  bottom: 12px;
+  right: 14px;
+  left: 14px;
+  width: auto;
 }
 
 .broker-value {

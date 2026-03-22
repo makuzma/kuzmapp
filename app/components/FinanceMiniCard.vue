@@ -15,7 +15,9 @@
     <div class="mini-bar-track">
       <div class="mini-bar-fill" :style="{ width: progress + '%', background: color }" />
     </div>
-    <div class="mini-value font-suse-mono">{{ value.toLocaleString('de-CH') }}</div>
+    <div class="mini-value font-suse-mono" :class="{ 'mini-value--negative': value < 0 }">
+      {{ value < 0 ? '−' : '' }}{{ Math.abs(value).toLocaleString('de-CH') }}
+    </div>
   </div>
 </template>
 
@@ -90,4 +92,10 @@ const props = defineProps<{
 }
 
 :global(.dark) .mini-value { color: #d1d5db; }
+
+.mini-value--negative {
+  color: #ef4444;
+}
+
+:global(.dark) .mini-value--negative { color: #ef4444; }
 </style>

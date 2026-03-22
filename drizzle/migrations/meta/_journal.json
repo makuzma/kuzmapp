@@ -50,6 +50,13 @@
       "when": 1742256000000,
       "tag": "0006_saule3a",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1774209773017,
+      "tag": "0007_income_entry_recurring",
+      "breakpoints": true
     }
   ]
 }

@@ -12,11 +12,12 @@ export default defineEventHandler(async (event) => {
   if (!existing) throw createError({ statusCode: 404 })
   if (existing.userId !== session.user.id) throw createError({ statusCode: 403 })
 
-  const { name, color, portfolioType } = await readBody(event)
+  const { name, color, portfolioType, groupId } = await readBody(event)
   await db.update(portfolio).set({
     ...(name != null ? { name: name.trim() } : {}),
     ...(color != null ? { color } : {}),
     ...(portfolioType != null ? { portfolioType } : {}),
+    ...(groupId !== undefined ? { groupId: groupId || null } : {}),
   }).where(eq(portfolio.id, id))
 
   return { ok: true }

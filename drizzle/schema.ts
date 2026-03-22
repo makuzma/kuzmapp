@@ -349,6 +349,13 @@ export const companyInfo = pgTable('company_info', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
+export const financeGroup = pgTable('finance_group', {
+  id:        text('id').primaryKey(),
+  userId:    text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  name:      text('name').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
 export const portfolio = pgTable('portfolio', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
@@ -356,6 +363,7 @@ export const portfolio = pgTable('portfolio', {
   color: text('color').notNull().default('blue'),
   portfolioType: text('portfolio_type').notNull().default(''),
   sortOrder: integer('sort_order').notNull().default(0),
+  groupId:   text('group_id').references(() => financeGroup.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
@@ -367,6 +375,13 @@ export const cashBalance = pgTable('cash_balance', {
   amount: real('amount').notNull(),
   currency: text('currency').notNull().default('CHF'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  // Lending-spezifische Felder
+  lendingKapital: real('lending_kapital'),
+  lendingKapitalTotal: real('lending_kapital_total'),
+  lendingZinsen: real('lending_zinsen'),
+  lendingGebuehren: real('lending_gebuehren'),
+  lendingJahr: integer('lending_jahr'),
+  lendingZinssatz: real('lending_zinssatz'),
 })
 
 export const metalHolding = pgTable('metal_holding', {
@@ -403,5 +418,48 @@ export const stockWatchlist = pgTable('stock_watchlist', {
   purchasePrice: real('purchase_price'),
   purchaseDate: text('purchase_date'),
   portfolioId: text('portfolio_id').references(() => portfolio.id, { onDelete: 'set null' }),
+  sector: text('sector'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const portfolioSnapshot = pgTable('portfolio_snapshot', {
+  id:        text('id').primaryKey(),
+  userId:    text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  date:      text('date').notNull(),
+  data:      json('data').$type<Record<string, any>>().notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+
+export const incomeKategorie = pgTable('income_kategorie', {
+  id:        text('id').primaryKey(),
+  userId:    text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  name:      text('name').notNull(),
+  type:      text('type').notNull(), // 'einkommen' | 'ausgabe'
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const incomeEntry = pgTable('income_entry', {
+  id:             text('id').primaryKey(),
+  userId:         text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  label:          text('label').notNull().default(''),
+  amount:         real('amount').notNull(),
+  currency:       text('currency').notNull().default('CHF'),
+  type:           text('type').notNull().default('einkommen'), // 'einkommen' | 'ausgabe'
+  wiederkehrend:  boolean('wiederkehrend').notNull().default(false),
+  frequenz:       text('frequenz'), // 'wöchentlich' | 'monatlich' | 'jährlich'
+  startDatum:     text('start_datum'),
+  endDatum:       text('end_datum'),
+  kategorie:      text('kategorie'),
+  monat:          integer('monat'), // 0-11, null = kein spezifischer Monat
+  createdAt:      timestamp('created_at').notNull().defaultNow(),
+})
+
+export const incomeEntryAusnahme = pgTable('income_entry_ausnahme', {
+  id:        text('id').primaryKey(),
+  entryId:   text('entry_id').notNull().references(() => incomeEntry.id, { onDelete: 'cascade' }),
+  userId:    text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  monat:     integer('monat').notNull(), // 0-11
+  betrag:    real('betrag').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })

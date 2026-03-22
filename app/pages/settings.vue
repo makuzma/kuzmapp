@@ -72,43 +72,57 @@
         </template>
 
         <div class="space-y-4">
-          <div class="space-y-2">
-            <div v-for="p in portfolios" :key="p.id">
-              <!-- Edit-Modus -->
-              <div v-if="editingPortfolioId === p.id" class="space-y-3 p-3 rounded-lg border border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-950">
-                <UInput v-model="editPortfolio.name" placeholder="Name" class="w-full" autofocus />
-                <USelect v-model="editPortfolio.portfolioType" :items="portfolioTypeOptions" placeholder="Typ wählen (optional)" class="w-full" />
-                <div>
-                  <p class="text-sm text-gray-500 mb-2">Farbe:</p>
-                  <div class="flex gap-2 flex-wrap">
-                    <button
-                      v-for="c in portfolioColors"
-                      :key="c.value"
-                      type="button"
-                      class="w-8 h-8 rounded-full border-3 transition-all hover:scale-110"
-                      :style="{ backgroundColor: c.hex, borderColor: editPortfolio.color === c.value ? '#1f2937' : 'transparent' }"
-                      :title="c.label"
-                      @click="editPortfolio.color = c.value"
-                    />
+          <div class="space-y-4">
+            <div v-for="group in portfoliosByType" :key="group.type" class="space-y-1">
+              <!-- Typ-Header -->
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 px-1">{{ group.type }}</p>
+              <!-- Portfolios dieser Kategorie -->
+              <div v-for="p in group.items" :key="p.id">
+                <!-- Edit-Modus -->
+                <div v-if="editingPortfolioId === p.id" class="space-y-3 p-3 rounded-lg border border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-950">
+                  <UInput v-model="editPortfolio.name" placeholder="Name" class="w-full" autofocus />
+                  <div class="grid grid-cols-2 gap-2">
+                    <USelect v-model="editPortfolio.portfolioType" :items="portfolioTypeOptions" placeholder="Typ (optional)" class="w-full" />
+                    <USelect v-model="editPortfolio.groupId" :items="groupOptions" placeholder="Gruppe (optional)" class="w-full" />
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500 mb-2">Farbe:</p>
+                    <div class="flex gap-2 flex-wrap">
+                      <button
+                        v-for="c in portfolioColors"
+                        :key="c.value"
+                        type="button"
+                        class="w-8 h-8 rounded-full border-3 transition-all hover:scale-110"
+                        :style="{ backgroundColor: c.hex, borderColor: editPortfolio.color === c.value ? '#1f2937' : 'transparent' }"
+                        :title="c.label"
+                        @click="editPortfolio.color = c.value"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex gap-2">
+                    <UButton size="sm" :loading="savingPortfolio" @click="savePortfolio(p.id)">Speichern</UButton>
+                    <UButton size="sm" variant="ghost" color="neutral" @click="editingPortfolioId = null">Abbrechen</UButton>
                   </div>
                 </div>
-                <div class="flex gap-2">
-                  <UButton size="sm" :loading="savingPortfolio" @click="savePortfolio(p.id)">Speichern</UButton>
-                  <UButton size="sm" variant="ghost" color="neutral" @click="editingPortfolioId = null">Abbrechen</UButton>
-                </div>
-              </div>
 
-              <!-- Normal-Modus -->
-              <div v-else class="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-900">
-                <div class="flex items-center gap-3">
-                  <span class="w-4 h-4 rounded-full shrink-0" :style="{ backgroundColor: portfolioColors.find(c => c.value === p.color)?.hex ?? p.color }" />
-                  <span class="font-medium">{{ p.name }}</span>
-                  <span v-if="p.portfolioType" class="text-xs text-gray-500 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">{{ p.portfolioType }}</span>
-                  <span class="text-xs text-gray-400">{{ p.stockCount }} Aktien · {{ p.metalCount }} Metalle</span>
-                </div>
-                <div class="flex gap-1">
-                  <UButton variant="ghost" color="neutral" icon="i-lucide-pencil" size="sm" @click="startEditPortfolio(p)" />
-                  <UButton variant="ghost" color="error" icon="i-lucide-trash-2" size="sm" :loading="deletingPortfolio === p.id" @click="deletePortfolio(p.id)" />
+                <!-- Normal-Modus -->
+                <div v-else class="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-900">
+                  <div class="flex items-center gap-3">
+                    <span class="w-4 h-4 rounded-full shrink-0" :style="{ backgroundColor: portfolioColors.find(c => c.value === p.color)?.hex ?? p.color }" />
+                    <span class="font-medium">{{ p.name }}</span>
+                    <span v-if="p.groupId" class="text-xs text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950 px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <UIcon name="i-lucide-layers" class="w-3 h-3" />{{ financeGroups?.find(g => g.id === p.groupId)?.name }}
+                    </span>
+                    <span v-if="p.stockCount || p.metalCount" class="text-xs text-gray-400">
+                      <template v-if="p.stockCount">{{ p.stockCount }} Aktien</template>
+                      <template v-if="p.stockCount && p.metalCount"> · </template>
+                      <template v-if="p.metalCount">{{ p.metalCount }} Metalle</template>
+                    </span>
+                  </div>
+                  <div class="flex gap-1">
+                    <UButton variant="ghost" color="neutral" icon="i-lucide-pencil" size="sm" @click="startEditPortfolio(p)" />
+                    <UButton variant="ghost" color="error" icon="i-lucide-trash-2" size="sm" :loading="deletingPortfolio === p.id" @click="deletePortfolio(p.id)" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -123,7 +137,10 @@
               <UInput v-model="newPortfolio.name" placeholder="Portfolio-Name" class="flex-1" />
               <UButton type="submit" icon="i-lucide-plus" :loading="addingPortfolio">Hinzufügen</UButton>
             </div>
-            <USelect v-model="newPortfolio.portfolioType" :items="portfolioTypeOptions" placeholder="Typ wählen (optional)" class="w-full" />
+            <div class="grid grid-cols-2 gap-2">
+              <USelect v-model="newPortfolio.portfolioType" :items="portfolioTypeOptions" placeholder="Typ (optional)" class="w-full" />
+              <USelect v-model="newPortfolio.groupId" :items="groupOptions" placeholder="Gruppe (optional)" class="w-full" />
+            </div>
             <div>
               <p class="text-sm text-gray-500 mb-2">Farbe:</p>
               <div class="flex gap-2 flex-wrap">
@@ -140,6 +157,43 @@
             </div>
           </form>
           <UAlert v-if="portfolioError" color="error" variant="subtle" :description="portfolioError" />
+        </div>
+      </UCard>
+
+      <!-- Gruppen -->
+      <UCard>
+        <template #header>
+          <h2 class="font-semibold text-lg">Gruppen</h2>
+          <p class="text-sm text-gray-500 mt-0.5">Eigene Gruppen erstellen und Portfolios zuweisen</p>
+        </template>
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <div v-for="g in financeGroups" :key="g.id">
+              <div v-if="editingGroupId === g.id" class="flex items-center gap-2">
+                <UInput v-model="editGroupName" class="flex-1" autofocus @keydown.enter="saveGroup(g.id)" @keydown.esc="editingGroupId = null" />
+                <UButton size="sm" :loading="savingGroup" @click="saveGroup(g.id)">Speichern</UButton>
+                <UButton size="sm" variant="ghost" color="neutral" @click="editingGroupId = null">Abbrechen</UButton>
+              </div>
+              <div v-else class="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-900">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-lucide-layers" class="w-4 h-4 text-gray-400" />
+                  <span class="font-medium">{{ g.name }}</span>
+                </div>
+                <div class="flex gap-1">
+                  <UButton variant="ghost" color="neutral" icon="i-lucide-pencil" size="sm" @click="startEditGroup(g)" />
+                  <UButton variant="ghost" color="error" icon="i-lucide-trash-2" size="sm" :loading="deletingGroupId === g.id" @click="deleteGroup(g.id)" />
+                </div>
+              </div>
+            </div>
+            <p v-if="!financeGroups?.length" class="text-sm text-gray-400 text-center py-4">Noch keine Gruppen</p>
+          </div>
+
+          <USeparator />
+
+          <form class="flex gap-2" @submit.prevent="addGroup">
+            <UInput v-model="newGroupName" placeholder="Gruppenname z.B. Flüssig" class="flex-1" />
+            <UButton type="submit" icon="i-lucide-plus" :loading="addingGroup">Hinzufügen</UButton>
+          </form>
         </div>
       </UCard>
 
@@ -189,6 +243,48 @@
           <!-- Weitere Kategorien -->
           <div v-else class="text-sm text-gray-400 py-4 text-center">
             Noch keine Einstellungen verfügbar
+          </div>
+        </div>
+      </UCard>
+
+      <!-- Einnahmen & Ausgaben Kategorien -->
+      <UCard>
+        <template #header>
+          <h2 class="font-semibold text-lg">Einnahmen & Ausgaben — Kategorien</h2>
+          <p class="text-sm text-gray-500 mt-0.5">Definiere eigene Kategorien für deine Einnahmen und Ausgaben</p>
+        </template>
+
+        <div class="grid grid-cols-2 gap-6">
+          <!-- Einnahmen -->
+          <div class="space-y-3">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Einnahmen</p>
+            <div class="flex gap-2">
+              <UInput v-model="newKategorieEinkommen" placeholder="z.B. Lohn, Freelance…" class="flex-1" @keydown.enter="addKategorie('einkommen')" />
+              <UButton icon="i-lucide-plus" @click="addKategorie('einkommen')" />
+            </div>
+            <div class="space-y-1">
+              <div v-for="k in kategorienEinkommen" :key="k.id" class="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/5">
+                <span class="text-sm">{{ k.name }}</span>
+                <UButton variant="ghost" color="error" icon="i-lucide-trash-2" size="xs" @click="deleteKategorie(k.id)" />
+              </div>
+              <p v-if="!kategorienEinkommen.length" class="text-xs text-gray-400 text-center py-2">Keine Kategorien</p>
+            </div>
+          </div>
+
+          <!-- Ausgaben -->
+          <div class="space-y-3">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Ausgaben</p>
+            <div class="flex gap-2">
+              <UInput v-model="newKategorieAusgabe" placeholder="z.B. Miete, Lebensmittel…" class="flex-1" @keydown.enter="addKategorie('ausgabe')" />
+              <UButton icon="i-lucide-plus" @click="addKategorie('ausgabe')" />
+            </div>
+            <div class="space-y-1">
+              <div v-for="k in kategorienAusgabe" :key="k.id" class="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/5">
+                <span class="text-sm">{{ k.name }}</span>
+                <UButton variant="ghost" color="error" icon="i-lucide-trash-2" size="xs" @click="deleteKategorie(k.id)" />
+              </div>
+              <p v-if="!kategorienAusgabe.length" class="text-xs text-gray-400 text-center py-2">Keine Kategorien</p>
+            </div>
           </div>
         </div>
       </UCard>
@@ -293,13 +389,14 @@ async function uploadLogo(event: Event) {
 }
 
 // --- Portfolios ---
-type Portfolio = { id: string; name: string; color: string; portfolioType: string; sortOrder: number; stockCount: number; metalCount: number }
+type Portfolio = { id: string; name: string; color: string; portfolioType: string; sortOrder: number; stockCount: number; metalCount: number; groupId: string | null }
 
 const portfolioTypeOptions = [
   { label: 'Aktien', value: 'Aktien' },
   { label: 'Edelmetalle', value: 'Edelmetalle' },
   { label: 'Säule 3A', value: 'Säule 3A' },
-  { label: 'Bankkonto', value: 'Bankkonto' },
+  { label: 'Cash', value: 'Cash' },
+  { label: 'Schulden', value: 'Schulden' },
   { label: 'Lending', value: 'Lending' },
 ]
 
@@ -317,7 +414,7 @@ const portfolioColors = [
 
 const { data: portfoliosData, refresh: refreshPortfolios } = await useFetch<Portfolio[]>('/api/portfolios')
 const { data: portfolioValues } = await useFetch<Record<string, number>>('/api/finance/portfolio-values')
-const categoryOrder = ['Aktien', 'Edelmetalle', 'Säule 3A', 'Bankkonto', 'Lending']
+const categoryOrder = ['Aktien', 'Edelmetalle', 'Säule 3A', 'Cash', 'Schulden', 'Lending']
 
 const portfolios = computed(() => {
   const ps = portfoliosData.value ?? []
@@ -332,11 +429,24 @@ const portfolios = computed(() => {
   })
 })
 
-const newPortfolio = reactive({ name: '', color: 'blue', portfolioType: '' })
+const groupOptions = computed(() =>
+  (financeGroups.value ?? []).map(g => ({ label: g.name, value: g.id })),
+)
+
+const portfoliosByType = computed(() => {
+  const result: { type: string; items: Portfolio[] }[] = []
+  for (const type of [...categoryOrder, '']) {
+    const items = portfolios.value.filter(p => (p.portfolioType || '') === type)
+    if (items.length) result.push({ type: type || 'Ohne Typ', items })
+  }
+  return result
+})
+
+const newPortfolio = reactive({ name: '', color: 'blue', portfolioType: '', groupId: '' })
 const addingPortfolio = ref(false)
 const portfolioError = ref('')
 const editingPortfolioId = ref<string | null>(null)
-const editPortfolio = reactive({ name: '', color: '', portfolioType: '' })
+const editPortfolio = reactive({ name: '', color: '', portfolioType: '', groupId: '' })
 const savingPortfolio = ref(false)
 const deletingPortfolio = ref<string | null>(null)
 
@@ -345,11 +455,12 @@ function startEditPortfolio(p: Portfolio) {
   editPortfolio.name = p.name
   editPortfolio.color = p.color
   editPortfolio.portfolioType = p.portfolioType ?? ''
+  editPortfolio.groupId = p.groupId ?? ''
 }
 
 async function savePortfolio(id: string) {
   savingPortfolio.value = true
-  await $fetch(`/api/portfolios/${id}`, { method: 'PATCH', body: { name: editPortfolio.name, color: editPortfolio.color, portfolioType: editPortfolio.portfolioType } })
+  await $fetch(`/api/portfolios/${id}`, { method: 'PATCH', body: { name: editPortfolio.name, color: editPortfolio.color, portfolioType: editPortfolio.portfolioType, groupId: editPortfolio.groupId } })
   editingPortfolioId.value = null
   savingPortfolio.value = false
   await refreshPortfolios()
@@ -360,10 +471,11 @@ async function addPortfolio() {
   if (!newPortfolio.name.trim()) return
   addingPortfolio.value = true
   try {
-    await $fetch('/api/portfolios', { method: 'POST', body: { name: newPortfolio.name, color: newPortfolio.color, portfolioType: newPortfolio.portfolioType } })
+    await $fetch('/api/portfolios', { method: 'POST', body: { name: newPortfolio.name, color: newPortfolio.color, portfolioType: newPortfolio.portfolioType, groupId: newPortfolio.groupId } })
     newPortfolio.name = ''
     newPortfolio.color = 'blue'
     newPortfolio.portfolioType = ''
+    newPortfolio.groupId = ''
     await refreshPortfolios()
   } catch (e: any) {
     portfolioError.value = e?.data?.message ?? 'Fehler'
@@ -373,7 +485,7 @@ async function addPortfolio() {
 }
 
 async function deletePortfolio(id: string) {
-  const ok = await confirm('Dieses Portfolio wirklich löschen? Alle zugehörigen Aktien werden dem Portfolio entzogen.', 'Portfolio löschen')
+  const ok = await confirm('Dieses Portfolio wirklich löschen? Alle zugehörigen Einträge werden vom Portfolio getrennt.', 'Portfolio löschen')
   if (!ok) return
   deletingPortfolio.value = id
   await $fetch(`/api/portfolios/${id}`, { method: 'DELETE' })
@@ -381,13 +493,54 @@ async function deletePortfolio(id: string) {
   await refreshPortfolios()
 }
 
+// --- Gruppen ---
+type FinanceGroup = { id: string; name: string; createdAt: string }
+
+const { data: financeGroups, refresh: refreshGroups } = await useFetch<FinanceGroup[]>('/api/finance/groups')
+const newGroupName = ref('')
+const addingGroup = ref(false)
+const editingGroupId = ref<string | null>(null)
+const editGroupName = ref('')
+const savingGroup = ref(false)
+const deletingGroupId = ref<string | null>(null)
+
+function startEditGroup(g: FinanceGroup) {
+  editingGroupId.value = g.id
+  editGroupName.value = g.name
+}
+
+async function saveGroup(id: string) {
+  if (!editGroupName.value.trim()) return
+  savingGroup.value = true
+  await $fetch(`/api/finance/groups/${id}`, { method: 'PATCH', body: { name: editGroupName.value } })
+  editingGroupId.value = null
+  savingGroup.value = false
+  await refreshGroups()
+}
+
+async function addGroup() {
+  if (!newGroupName.value.trim()) return
+  addingGroup.value = true
+  await $fetch('/api/finance/groups', { method: 'POST', body: { name: newGroupName.value } })
+  newGroupName.value = ''
+  addingGroup.value = false
+  await refreshGroups()
+}
+
+async function deleteGroup(id: string) {
+  deletingGroupId.value = id
+  await $fetch(`/api/finance/groups/${id}`, { method: 'DELETE' })
+  deletingGroupId.value = null
+  await refreshGroups()
+}
+
 // --- Anlageklassen ---
 const assetCategories = [
   { key: 'aktien',      label: 'Aktien',      icon: 'i-lucide-trending-up' },
   { key: 'edelmetalle', label: 'Edelmetalle',  icon: 'i-lucide-gem' },
   { key: 'saule3a',     label: 'Säule 3A',     icon: 'i-lucide-piggy-bank' },
-  { key: 'bankkonto',   label: 'Bankkonto',    icon: 'i-lucide-landmark' },
-  { key: 'lending',     label: 'Lending',      icon: 'i-lucide-percent' },
+  { key: 'cash',        label: 'Cash',         icon: 'i-lucide-landmark' },
+  { key: 'schulden',    label: 'Schulden',     icon: 'i-lucide-percent' },
 ]
 const activeAssetTab = ref('aktien')
 const savingAssetSettings = ref(false)
@@ -417,6 +570,28 @@ async function saveAssetSettings() {
   } finally {
     savingAssetSettings.value = false
   }
+}
+
+// --- Einnahmen & Ausgaben Kategorien ---
+type IncomeKategorie = { id: string; name: string; type: string }
+const { data: kategorienRaw, refresh: refreshKategorien } = await useFetch<IncomeKategorie[]>('/api/finance/income-kategorien')
+const kategorienEinkommen = computed(() => (kategorienRaw.value ?? []).filter(k => k.type === 'einkommen'))
+const kategorienAusgabe = computed(() => (kategorienRaw.value ?? []).filter(k => k.type === 'ausgabe'))
+const newKategorieEinkommen = ref('')
+const newKategorieAusgabe = ref('')
+
+async function addKategorie(type: 'einkommen' | 'ausgabe') {
+  const name = type === 'einkommen' ? newKategorieEinkommen.value.trim() : newKategorieAusgabe.value.trim()
+  if (!name) return
+  await $fetch('/api/finance/income-kategorien', { method: 'POST', body: { name, type } })
+  if (type === 'einkommen') newKategorieEinkommen.value = ''
+  else newKategorieAusgabe.value = ''
+  await refreshKategorien()
+}
+
+async function deleteKategorie(id: string) {
+  await $fetch(`/api/finance/income-kategorien/${id}`, { method: 'DELETE' })
+  await refreshKategorien()
 }
 </script>
 

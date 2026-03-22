@@ -13,6 +13,12 @@ export default defineNuxtConfig({
     externals: {
       external: ['pdfkit'],
     },
+    experimental: {
+      tasks: true,
+    },
+    scheduledTasks: {
+      '0 0 * * *': ['finance:snapshot'],
+    },
   },
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
