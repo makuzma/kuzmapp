@@ -144,22 +144,31 @@ export default defineEventHandler(async (event) => {
   // Cash: pro Portfolio dazurechnen (kein changePct)
   // Schulden-Portfolios werden negativ gewertet
   // Lending-Portfolios: nur aktuelles Jahr, Wert = lendingKapitalTotal
+  // Aktien-Portfolio-Cash → wird separat zur Cash-Gruppe gezählt (damit Cash-Minicard = Bargeld-Sektion)
   const DEBT_TYPES = new Set(['Schulden'])
   const CURRENT_YEAR = new Date().getFullYear()
+  let aktienCashTotal = 0
   for (const c of cashRows) {
     if (!c.portfolioId) continue
     const portfolio = portfolios.find(p => p.id === c.portfolioId)
-    const isDebt = DEBT_TYPES.has(portfolio?.portfolioType ?? '')
-    const isLending = portfolio?.portfolioType === 'Lending'
+    const portfolioType = portfolio?.portfolioType?.trim() ?? ''
+    const isDebt = DEBT_TYPES.has(portfolioType)
+    const isLending = portfolioType === 'Lending'
+    const isAktien = portfolioType === 'Aktien'
     if (isLending) {
       if (c.lendingJahr !== CURRENT_YEAR) continue
       const val = convertTo(c.lendingKapitalTotal ?? c.lendingKapital ?? c.amount, c.currency)
       ensure(c.portfolioId)
       byPortfolio[c.portfolioId].value += val
+    } else if (isAktien) {
+      // Broker-Cash gehört zur Cash-Gruppe, nicht zu Aktien
+      aktienCashTotal += convertTo(c.amount, c.currency)
     } else {
       const val = convertTo(c.amount, c.currency)
       ensure(c.portfolioId)
-      byPortfolio[c.portfolioId].value += isDebt ? -Math.abs(val) : val
+      // Schulden: Vorzeichen beibehalten (Mischung aus pos./neg. Einträgen möglich)
+      // Negierung erfolgt beim finalen Mapping (wie auf der Seite via Math.abs)
+      byPortfolio[c.portfolioId].value += val
     }
   }
 
@@ -185,7 +194,10 @@ export default defineEventHandler(async (event) => {
 
   for (const p of portfolios) {
     const rawType = p.portfolioType?.trim() || p.name
-    const type = TYPE_MAP[rawType] ?? rawType
+    // TYPE_MAP-Typen (z.B. 'Säule 3A' → 'Vorsorge') mit trim auflösen.
+    // Für nicht gemappte Typen den Originalnamen (ohne trim) verwenden,
+    // damit ' Schulden' o.ä. mit Whitespace nicht versehentlich unter 'Schulden' landet.
+    const type = TYPE_MAP[rawType] ?? p.portfolioType ?? rawType
     const pv = byPortfolio[p.id]
     if (!groups[type]) {
       groups[type] = { type, value: 0, changeWeightedSum: 0, changeWeight: 0, color: CATEGORY_COLORS[type] ?? COLOR_HEX[p.color] ?? '#6b7280', count: 0 }
@@ -195,6 +207,12 @@ export default defineEventHandler(async (event) => {
     groups[type].changeWeight += pv?.changeWeight ?? 0
     groups[type].count++
   }
+
+  // Aktien-Broker-Cash zur Cash-Gruppe addieren
+  if (!groups['Cash']) {
+    groups['Cash'] = { type: 'Cash', value: 0, changeWeightedSum: 0, changeWeight: 0, color: CATEGORY_COLORS['Cash'], count: 0 }
+  }
+  groups['Cash'].value += aktienCashTotal
 
   // Ensure all 6 categories always appear, in fixed order
   for (const cat of CATEGORY_ORDER) {
@@ -207,7 +225,8 @@ export default defineEventHandler(async (event) => {
     .filter(g => CATEGORY_ORDER.includes(g.type))
     .map(g => ({
       type:      g.type,
-      value:     Math.round(g.value),
+      // Schulden: Netto-Summe negieren (wie auf der Seite via -Math.abs)
+      value:     g.type === 'Schulden' ? -Math.abs(Math.round(g.value)) : Math.round(g.value),
       changePct: g.changeWeight > 0 ? parseFloat((g.changeWeightedSum / g.changeWeight).toFixed(2)) : 0,
       color:     g.color,
       count:     g.count,

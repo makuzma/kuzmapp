@@ -134,6 +134,9 @@
                         <div class="cash-entry-left">
                           <span class="cash-entry-name">{{ e.label || (e.type === 'ausgabe' ? 'Ausgabe' : 'Einnahme') }}</span>
                           <span v-if="e.frequenz" class="income-frequenz-badge">{{ e.frequenz }}</span>
+                          <span v-if="deadlineDots(e.endDatum)" class="deadline-dots">
+                            <span v-for="n in deadlineDots(e.endDatum)" :key="n" class="deadline-dot" :class="deadlineDots(e.endDatum) <= 2 ? 'deadline-dot--urgent' : 'deadline-dot--warn'" />
+                          </span>
                         </div>
                         <div class="cash-entry-right">
                           <template v-if="incomeSelectedMonth !== null && incomeAusnahmen.find((a: any) => a.entryId === e.id && Number(a.monat) === Number(incomeSelectedMonth))">
@@ -623,6 +626,7 @@
                   <div class="cash-entry-left">
                     <UIcon :name="c.amount < 0 ? 'i-lucide-trending-down' : 'i-lucide-banknote'" class="w-4 h-4 opacity-40" />
                     <span class="cash-entry-portfolio">{{ portfolios.find((p: any) => p.id === c.portfolioId)?.name ?? '—' }}</span>
+                    <span class="cash-entry-updated">{{ new Date(c.updatedAt).toLocaleDateString('de-CH') }}</span>
                   </div>
                   <div class="cash-entry-right">
                     <span class="cash-entry-value font-[SUSE_Mono]" :class="{ 'cash-entry-value--negative': c.amount < 0 }">
@@ -662,6 +666,7 @@
                     <div class="cash-entry-left">
                       <UIcon name="i-lucide-landmark" class="w-4 h-4 opacity-40" />
                       <span class="cash-entry-portfolio">{{ portfolios.find((p: any) => p.id === c.portfolioId)?.name ?? '—' }}</span>
+                      <span class="cash-entry-updated">{{ new Date(c.updatedAt).toLocaleDateString('de-CH') }}</span>
                     </div>
                     <div class="cash-entry-right">
                       <span class="cash-entry-value font-[SUSE_Mono]">
@@ -1861,6 +1866,14 @@ async function saveAusnahme() {
 async function deleteAusnahme(id: string) {
   await $fetch(`/api/finance/income-ausnahmen/${id}`, { method: 'DELETE' })
   await refreshAusnahmen()
+  ausnahmeForm.value.betrag = ''
+}
+function deadlineDots(endDatum: string | null | undefined): number {
+  if (!endDatum) return 0
+  const end = new Date(endDatum)
+  const now = new Date()
+  const months = (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth())
+  return months > 0 && months <= 4 ? months : 0
 }
 const incomeSearchOpen = ref(false)
 const incomeSearchQuery = ref('')
@@ -1871,7 +1884,7 @@ const incomePeriodMultiplier = computed(() => {
   if (incomePeriod.value === 'stunde') return 12 / 365 / 24
   if (incomePeriod.value === 'tag')    return 12 / 365
   if (incomePeriod.value === 'woche')  return 12 / 52
-  if (incomePeriod.value === 'jahr')   return 12
+  if (incomePeriod.value === 'jahr')   return 12 - new Date().getMonth()
   return 1 // monat
 })
 const incomeModalOpen = ref(false)
@@ -3261,6 +3274,27 @@ const dividendAvgYield = computed(() => {
   padding: 1px 5px;
 }
 
+.deadline-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.deadline-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.deadline-dot--warn {
+  background: #f59e0b;
+}
+
+.deadline-dot--urgent {
+  background: #ef4444;
+}
+
 .edelmetalle-grid {
   display: grid;
   grid-template-columns: 1fr 3fr;
@@ -4165,6 +4199,11 @@ const dividendAvgYield = computed(() => {
   font-size: 13px;
   font-weight: 600;
   color: var(--f-text);
+}
+
+.cash-entry-updated {
+  font-size: 10px;
+  color: var(--f-text-muted, #9ca3af);
 }
 
 .cash-entry-right {

@@ -11,6 +11,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
   await db.update(cashBalance).set({
+    updatedAt:        new Date(),
     amount:           Number(body.amount),
     currency:         body.currency || 'CHF',
     lendingKapital:      body.lendingKapital      != null ? Number(body.lendingKapital)      : null,

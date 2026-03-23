@@ -33,12 +33,18 @@
         >
           <!-- Header -->
           <div class="flex items-center justify-between mb-3">
-            <span class="text-gray-500 text-xs uppercase tracking-widest">{{ snap.date }}</span>
-            <UBadge
-              :color="snap.data.totalChangePct >= 0 ? 'success' : 'error'"
-              variant="soft"
-              class="font-[SUSE_Mono] text-xs"
-            >{{ snap.data.totalChangePct >= 0 ? '+' : '' }}{{ snap.data.totalChangePct.toFixed(2) }}%</UBadge>
+            <div class="flex items-center gap-2">
+              <span class="text-gray-500 text-xs uppercase tracking-widest">{{ snap.date }}</span>
+              <span class="text-gray-700 text-xs">{{ new Date(snap.createdAt).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <UBadge
+                :color="snap.data.totalChangePct >= 0 ? 'success' : 'error'"
+                variant="soft"
+                class="font-[SUSE_Mono] text-xs"
+              >{{ snap.data.totalChangePct >= 0 ? '+' : '' }}{{ snap.data.totalChangePct.toFixed(2) }}%</UBadge>
+              <UButton icon="i-lucide-trash-2" variant="ghost" color="error" size="xs" :loading="deletingId === snap.id" @click="deleteSnapshot(snap.id)" />
+            </div>
           </div>
 
           <!-- JSON body -->
@@ -102,11 +108,6 @@
                     <span v-if="pi < g.positions.length - 1" class="text-gray-700">,</span>
                   </span>
                 </div>
-                <!-- Cash line for broker groups -->
-                <div v-if="g.cashValue" class="pl-4 flex items-center justify-between gap-4 text-xs text-gray-500">
-                  <span>cash</span>
-                  <span>{{ g.cashValue.toLocaleString('de-CH') }}</span>
-                </div>
                 <div class="text-gray-700 text-xs">]</div>
               </div>
             </div>
@@ -148,6 +149,19 @@ async function triggerBackfill() {
   }
   finally {
     backfillLoading.value = false
+  }
+}
+
+const deletingId = ref<string | null>(null)
+
+async function deleteSnapshot(id: string) {
+  deletingId.value = id
+  try {
+    await $fetch(`/api/finance/snapshot/${id}`, { method: 'DELETE' })
+    await refresh()
+  }
+  finally {
+    deletingId.value = null
   }
 }
 

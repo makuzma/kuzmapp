@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { generateId } from 'better-auth'
 import { auth } from '../../../lib/auth'
 import { db } from '../../../lib/db'
-import { portfolioSnapshot } from '../../../../drizzle/schema'
+import { portfolioSnapshot, saule3a } from '../../../../drizzle/schema'
 
 const METAL_NAMES: Record<string, string> = {
   gold: 'Gold', silver: 'Silber', platinum: 'Platin', palladium: 'Palladium',
@@ -63,13 +63,14 @@ export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session) throw createError({ statusCode: 401 })
 
-  const [portfolios, watchlist, cashBalances, metalHoldings, companySettings, fx] = await Promise.all([
+  const [portfolios, watchlist, cashBalances, metalHoldings, companySettings, fx, saule3aRows] = await Promise.all([
     $fetch<any[]>('/api/portfolios', { headers: event.headers }),
     $fetch<any[]>('/api/stocks/watchlist', { headers: event.headers }),
     $fetch<any[]>('/api/finance/cash', { headers: event.headers }),
     $fetch<any[]>('/api/metals/holdings', { headers: event.headers }),
     $fetch<any>('/api/settings/company', { headers: event.headers }).catch(() => ({ currency: 'CHF' })),
     $fetch<Record<string, number>>('/api/stocks/fx', { headers: event.headers }).catch(() => ({ USD: 0.9, EUR: 0.95, GBP: 1.12, CHF: 1 })),
+    db.select().from(saule3a).where(eq(saule3a.userId, session.user.id)),
   ])
 
   const companyCurrency: string = companySettings.currency ?? 'CHF'
@@ -164,7 +165,7 @@ export default defineEventHandler(async (event) => {
       const entry = brokerMap.get(c.portfolioId)
       if (!entry) continue
       const val = convert(c.amount, c.currency)
-      entry.value += val
+      // cashValue nur zur Info; Wert geht in Bargeld-Gruppe (nicht doppelt zählen)
       entry.cashValue += val
     }
 
@@ -228,7 +229,68 @@ export default defineEventHandler(async (event) => {
           })),
       }))
 
-    const groups = [...brokerGroups, ...metalGroupsList]
+    // ── Bargeld / Schulden / Vorsorge / Lending — Fix-Rate ──
+    const TYPE_MAP: Record<string, string> = { 'Säule 3A': 'Vorsorge', 'Bankkonto': 'Bargeld', 'Cash': 'Bargeld', 'Aktien': 'Bargeld' }
+    const DEBT_TYPES = new Set(['Schulden'])
+    const CURRENT_YEAR = new Date().getFullYear()
+    const fixGroups: Record<string, { value: number; positions: { name: string; value: number }[] }> = {
+      Bargeld:  { value: 0, positions: [] },
+      Schulden: { value: 0, positions: [] },
+      Vorsorge: { value: 0, positions: [] },
+      Lending:  { value: 0, positions: [] },
+    }
+
+    // saule3a → Vorsorge: nur neusten Eintrag pro Label, Labels vormerken
+    const latestSaule3a = Object.values(
+      saule3aRows.reduce((acc: Record<string, any>, row) => {
+        if (!acc[row.label] || new Date(row.updatedAt) > new Date(acc[row.label].updatedAt))
+          acc[row.label] = row
+        return acc
+      }, {}),
+    )
+    const saule3aLabels = new Set(latestSaule3a.map((s: any) => s.label))
+    for (const s of latestSaule3a) {
+      const val = Math.round(convert(s.amount, 'CHF'))
+      fixGroups.Vorsorge.value += val
+      fixGroups.Vorsorge.positions.push({ name: s.label || 'Säule 3A', value: val })
+    }
+
+    for (const c of cashBalances) {
+      const portfolio = portfolios.find((p: any) => p.id === c.portfolioId)
+      if (!portfolio) continue // standalone Einträge ohne Portfolio überspringen
+      const rawType = portfolio.portfolioType?.trim()
+      const mapped = TYPE_MAP[rawType] ?? rawType
+      if (mapped === 'Bargeld') {
+        const val = Math.round(convert(c.amount, c.currency))
+        fixGroups.Bargeld.value += val
+        fixGroups.Bargeld.positions.push({ name: c.label || portfolio.name, value: val })
+      }
+      else if (DEBT_TYPES.has(rawType)) {
+        const val = Math.round(convert(c.amount, c.currency))
+        fixGroups.Schulden.value += val
+        fixGroups.Schulden.positions.push({ name: c.label || portfolio.name, value: -val })
+      }
+      else if (mapped === 'Vorsorge' && !saule3aLabels.has(c.label)) {
+        const val = Math.round(convert(c.amount, c.currency))
+        fixGroups.Vorsorge.value += val
+        fixGroups.Vorsorge.positions.push({ name: c.label || portfolio.name, value: val })
+      }
+      else if (rawType === 'Lending' && c.lendingJahr === CURRENT_YEAR) {
+        const val = Math.round(convert(c.lendingKapitalTotal ?? c.lendingKapital ?? c.amount, c.currency))
+        fixGroups.Lending.value += val
+        fixGroups.Lending.positions.push({ name: c.label || portfolio.name, value: val })
+      }
+    }
+
+    const fixGroupsList = Object.entries(fixGroups)
+      .filter(([, g]) => g.value !== 0 || g.positions.length > 0)
+      .map(([type, g]) => ({
+        type,
+        value: type === 'Schulden' ? -Math.abs(g.value) : g.value,
+        positions: g.positions,
+      }))
+
+    const groups = [...brokerGroups, ...metalGroupsList, ...fixGroupsList]
     const totalValue = groups.reduce((s, g) => s + g.value, 0)
     const totalChangePct = totalValue > 0
       ? parseFloat((brokerGroups.reduce((s, g) => s + (g.changePct ?? 0) * g.value, 0) / totalValue).toFixed(2))

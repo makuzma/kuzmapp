@@ -375,6 +375,7 @@ export const cashBalance = pgTable('cash_balance', {
   amount: real('amount').notNull(),
   currency: text('currency').notNull().default('CHF'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
   // Lending-spezifische Felder
   lendingKapital: real('lending_kapital'),
   lendingKapitalTotal: real('lending_kapital_total'),
