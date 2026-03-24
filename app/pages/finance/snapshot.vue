@@ -7,14 +7,36 @@
           <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" to="/finance" />
           <h1 class="font-instrument italic text-5xl">Snapshots</h1>
         </div>
-        <UButton
-          icon="i-lucide-calendar-range"
-          variant="soft"
-          color="neutral"
-          size="sm"
-          :loading="backfillLoading"
-          @click="triggerBackfill"
-        >Letzte Woche</UButton>
+        <div class="flex items-center gap-2">
+          <input v-model="rangeFrom" type="date" class="backfill-date-input" />
+          <span class="text-xs text-gray-400">–</span>
+          <input v-model="rangeTo" type="date" class="backfill-date-input" />
+          <UButton
+            icon="i-lucide-calendar-range"
+            variant="soft"
+            color="primary"
+            size="sm"
+            :loading="backfillLoading"
+            :disabled="!rangeFrom || !rangeTo"
+            @click="triggerBackfill(rangeFrom, rangeTo)"
+          >Backfill</UButton>
+          <UButton
+            icon="i-lucide-calendar"
+            variant="soft"
+            color="neutral"
+            size="sm"
+            :loading="backfillLoading"
+            @click="triggerLastMonth"
+          >1 Monat</UButton>
+          <UButton
+            icon="i-lucide-clock"
+            variant="soft"
+            color="neutral"
+            size="sm"
+            :loading="backfillLoading"
+            @click="triggerBackfill()"
+          >Letzte Woche</UButton>
+        </div>
       </div>
 
       <template v-if="pending">
@@ -128,11 +150,22 @@ const { data: snapshots, pending, refresh } = await useFetch('/api/finance/snaps
 
 const toast = useToast()
 const backfillLoading = ref(false)
+const rangeFrom = ref('')
+const rangeTo = ref('')
 
-async function triggerBackfill() {
+function triggerLastMonth() {
+  const to = new Date()
+  to.setDate(to.getDate() - 1)
+  const from = new Date(to)
+  from.setMonth(from.getMonth() - 1)
+  triggerBackfill(from.toISOString().slice(0, 10), to.toISOString().slice(0, 10))
+}
+
+async function triggerBackfill(from?: string, to?: string) {
   backfillLoading.value = true
   try {
-    const res = await $fetch<{ created: string[]; skipped: string[] }>('/api/finance/snapshot/backfill', { method: 'POST' })
+    const body = from && to ? { from, to } : undefined
+    const res = await $fetch<{ created: string[]; skipped: string[] }>('/api/finance/snapshot/backfill', { method: 'POST', body })
     await refresh()
     toast.add({
       title: `${res.created.length} Snapshots erstellt`,
@@ -181,3 +214,18 @@ function isGroupOpen(snapId: string, groupType: string): boolean {
   return openGroups.value[snapId]?.has(groupType) ?? false
 }
 </script>
+
+<style scoped>
+.backfill-date-input {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: inherit;
+  outline: none;
+}
+.backfill-date-input:focus {
+  border-color: rgba(255,255,255,0.25);
+}
+</style>

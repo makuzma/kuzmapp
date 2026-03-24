@@ -18,6 +18,7 @@
       <div class="pill-card">
         <!-- Zeitraum-Selektor oben rechts als Pille -->
         <div class="pill-header">
+          <span class="pill-overview-title">Overview</span>
           <FinancePeriodSelector v-model="selectedPeriod" :trend="currentPeriodData.pct" />
         </div>
         <!-- Mini-Cards + Totals -->
@@ -60,15 +61,113 @@
               :sections="incomeSections"
               :total-value="(incomeSections.find(s => s.id === 'einnahmen')?.value ?? 0) - (incomeSections.find(s => s.id === 'ausgaben')?.value ?? 0)"
               :visible="true"
+              :selected-id="selectedIncomeSectionId"
               icon="i-lucide-trending-up"
-              @select="() => {}"
-              @reset="() => {}"
+              @select="selectedIncomeSectionId = selectedIncomeSectionId === $event ? null : $event"
+              @reset="selectedIncomeSectionId = null"
             >
               <template #section="{ section }">
                 <div class="broker-name">{{ section.label }}</div>
                 <div class="broker-bottom">
                   <div class="broker-value font-[SUSE_Mono]">
-                    <FlipNumber :value="Math.round(section.value).toLocaleString('de-CH')" />
+                    {{ section.id === 'ausgaben' ? '−' : '' }}<FlipNumber :value="Math.round(section.value).toLocaleString('de-CH')" />
+                  </div>
+                </div>
+              </template>
+              <template #collapsed-view>
+                <!-- Verhältnis Einnahmen / Ausgaben -->
+                <div class="breakdown-group">
+                  <div class="breakdown-labels-row font-[SUSE_Mono]">
+                    <span v-for="item in incomeRatioBreakdown" :key="item.label" :style="{ width: item.pct + '%', color: item.color }">{{ item.label }}</span>
+                  </div>
+                  <div class="breakdown-stacked-bar font-[SUSE_Mono]">
+                    <div
+                      v-for="item in incomeRatioBreakdown"
+                      :key="item.label"
+                      class="breakdown-segment"
+                      style="cursor: pointer"
+                      :style="{
+                        width: item.pct + '%', background: item.color,
+                        opacity: selectedRatioFilter && selectedRatioFilter !== item.label ? 0.3 : 1,
+                        filter: selectedRatioFilter === item.label ? 'brightness(1.2)' : 'none',
+                        transition: 'opacity 0.2s, filter 0.2s',
+                      }"
+                      @click="selectedRatioFilter = selectedRatioFilter === item.label ? null : item.label"
+                    >
+                      <span class="breakdown-segment-label">{{ item.pct.toFixed(0) }}%</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Einkommen Breakdown -->
+                <div v-if="!selectedRatioFilter || selectedRatioFilter === 'Einnahmen'" class="breakdown-group" style="margin-top: 14px">
+                  <div class="breakdown-stacked-bar font-[SUSE_Mono]">
+                    <div
+                      v-for="item in incomeChartItems"
+                      :key="item.id"
+                      class="breakdown-segment"
+                      :style="{
+                        width: item.pct + '%', background: item.color, cursor: 'pointer',
+                        opacity: (hoveredIncomeItem || selectedIncomeItem) && hoveredIncomeItem !== item.label && selectedIncomeItem !== item.label ? 0.25 : 1,
+                        filter: hoveredIncomeItem === item.label || selectedIncomeItem === item.label ? 'brightness(1.35)' : 'none',
+                        transition: 'opacity 0.2s, filter 0.2s',
+                      }"
+                      @mouseenter="hoveredIncomeItem = item.label"
+                      @mouseleave="hoveredIncomeItem = null"
+                      @click="selectedIncomeItem = selectedIncomeItem === item.label ? null : item.label"
+                    >
+                      <span class="breakdown-segment-label">{{ item.pct.toFixed(0) }}%</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="breakdown-sector-list font-[SUSE_Mono]" style="margin-top: 10px">
+                  <div v-if="!incomeChartItems.length" class="breakdown-sector-loading" style="opacity:0.4; font-size:9px;">Keine Einnahmen</div>
+                  <div
+                    v-for="item in incomeChartItems"
+                    :key="item.id"
+                    class="breakdown-sector-row"
+                    @mouseenter="hoveredIncomeItem = item.label"
+                    @mouseleave="hoveredIncomeItem = null"
+                    @click="selectedIncomeItem = selectedIncomeItem === item.label ? null : item.label"
+                  >
+                    <span class="breakdown-sector-dot" :style="{ background: item.color, transform: selectedIncomeItem === item.label ? 'scale(1.5)' : 'scale(1)', transition: 'transform 0.2s' }" />
+                    <span class="breakdown-sector-name" :style="{ opacity: (hoveredIncomeItem || selectedIncomeItem) && hoveredIncomeItem !== item.label && selectedIncomeItem !== item.label ? 0.35 : 1, fontWeight: selectedIncomeItem === item.label ? 700 : 400, transition: 'opacity 0.2s' }">{{ item.label || '—' }}</span>
+                    <span class="breakdown-sector-pct" :style="{ color: item.color, opacity: (hoveredIncomeItem || selectedIncomeItem) && hoveredIncomeItem !== item.label && selectedIncomeItem !== item.label ? 0.35 : 1, transition: 'opacity 0.2s' }">+{{ fmt(item._monthly * incomePeriodMultiplier) }}</span>
+                  </div>
+                </div>
+                <!-- Ausgaben Breakdown -->
+                <div v-if="!selectedRatioFilter || selectedRatioFilter === 'Ausgaben'" class="breakdown-group" style="margin-top: 14px">
+                  <div class="breakdown-stacked-bar font-[SUSE_Mono]">
+                    <div
+                      v-for="item in ausgabenChartItems"
+                      :key="item.id"
+                      class="breakdown-segment"
+                      :style="{
+                        width: item.pct + '%', background: item.color, cursor: 'pointer',
+                        opacity: (hoveredAusgabenItem || selectedAusgabenItem) && hoveredAusgabenItem !== item.label && selectedAusgabenItem !== item.label ? 0.25 : 1,
+                        filter: hoveredAusgabenItem === item.label || selectedAusgabenItem === item.label ? 'brightness(1.35)' : 'none',
+                        transition: 'opacity 0.2s, filter 0.2s',
+                      }"
+                      @mouseenter="hoveredAusgabenItem = item.label"
+                      @mouseleave="hoveredAusgabenItem = null"
+                      @click="selectedAusgabenItem = selectedAusgabenItem === item.label ? null : item.label"
+                    >
+                      <span class="breakdown-segment-label">{{ item.pct.toFixed(0) }}%</span>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="!selectedRatioFilter || selectedRatioFilter === 'Ausgaben'" class="breakdown-sector-list font-[SUSE_Mono]" style="margin-top: 10px">
+                  <div v-if="!ausgabenChartItems.length" class="breakdown-sector-loading" style="opacity:0.4; font-size:9px;">Keine Ausgaben</div>
+                  <div
+                    v-for="item in ausgabenChartItems"
+                    :key="item.id"
+                    class="breakdown-sector-row"
+                    @mouseenter="hoveredAusgabenItem = item.label"
+                    @mouseleave="hoveredAusgabenItem = null"
+                    @click="selectedAusgabenItem = selectedAusgabenItem === item.label ? null : item.label"
+                  >
+                    <span class="breakdown-sector-dot" :style="{ background: item.color, transform: selectedAusgabenItem === item.label ? 'scale(1.5)' : 'scale(1)', transition: 'transform 0.2s' }" />
+                    <span class="breakdown-sector-name" :style="{ opacity: (hoveredAusgabenItem || selectedAusgabenItem) && hoveredAusgabenItem !== item.label && selectedAusgabenItem !== item.label ? 0.35 : 1, fontWeight: selectedAusgabenItem === item.label ? 700 : 400, transition: 'opacity 0.2s' }">{{ item.label || '—' }}</span>
+                    <span class="breakdown-sector-pct" :style="{ color: item.color, opacity: (hoveredAusgabenItem || selectedAusgabenItem) && hoveredAusgabenItem !== item.label && selectedAusgabenItem !== item.label ? 0.35 : 1, transition: 'opacity 0.2s' }">-{{ fmt(item._monthly * incomePeriodMultiplier) }}</span>
                   </div>
                 </div>
               </template>
@@ -96,7 +195,10 @@
                 </div>
               </div>
             </div>
-            <div class="income-two-cols">
+            <div v-if="incomePending" class="list-spinner-wrap">
+              <UIcon name="i-lucide-loader-circle" class="list-spinner-icon animate-spin" />
+            </div>
+            <div v-else class="income-two-cols">
               <!-- Linke Spalte: Wiederkehrend -->
               <OverlayScrollbarsComponent :options="osOptions" class="income-list-scroll" defer>
                 <div class="income-inner-list">
@@ -105,6 +207,7 @@
                     Wiederkehrend
                   </div>
                   <!-- Dividenden + Zinsen (readonly) -->
+                  <template v-if="!incomeTypeFilter || incomeTypeFilter === 'einkommen'">
                   <div class="income-group-label">Einnahmen</div>
                   <div v-if="!incomeSearchQuery || 'dividenden'.includes(incomeSearchQuery.toLowerCase())" class="cash-entry income-entry--readonly">
                     <div class="cash-entry-left">
@@ -126,9 +229,10 @@
                       <UIcon name="i-lucide-lock" class="w-3 h-3 text-gray-300" />
                     </div>
                   </div>
+                  </template>
                   <!-- Wiederkehrende manuelle Einträge -->
                   <template v-for="group in [['einkommen', null], ['ausgabe', 'Ausgaben']]" :key="group[0]">
-                    <template v-if="incomeEntries.filter((e: any) => e.type === group[0] && e.wiederkehrend && (!incomeSearchQuery || (e.label || '').toLowerCase().includes(incomeSearchQuery.toLowerCase()))).length">
+                    <template v-if="(!incomeTypeFilter || incomeTypeFilter === group[0]) && incomeEntries.filter((e: any) => e.type === group[0] && e.wiederkehrend && (!incomeSearchQuery || (e.label || '').toLowerCase().includes(incomeSearchQuery.toLowerCase()))).length">
                       <div v-if="group[1]" class="income-group-label">{{ group[1] }}</div>
                       <div v-for="e in incomeEntries.filter((e: any) => e.type === group[0] && e.wiederkehrend && (!incomeSearchQuery || (e.label || '').toLowerCase().includes(incomeSearchQuery.toLowerCase())))" :key="e.id" class="cash-entry" @mouseenter="hoveredIncomeId = e.id" @mouseleave="hoveredIncomeId = null">
                         <div class="cash-entry-left">
@@ -167,7 +271,7 @@
                     Einmalig / Monat
                   </div>
                   <template v-for="group in [['einkommen', 'Einnahmen'], ['ausgabe', 'Ausgaben']]" :key="group[0]">
-                    <template v-if="incomeEntries.filter((e: any) => e.type === group[0] && !e.wiederkehrend && (!incomeSearchQuery || (e.label || '').toLowerCase().includes(incomeSearchQuery.toLowerCase()))).length">
+                    <template v-if="(!incomeTypeFilter || incomeTypeFilter === group[0]) && incomeEntries.filter((e: any) => e.type === group[0] && !e.wiederkehrend && (!incomeSearchQuery || (e.label || '').toLowerCase().includes(incomeSearchQuery.toLowerCase()))).length">
                       <div class="income-group-label">{{ group[1] }}</div>
                       <div v-for="e in incomeEntries.filter((e: any) => e.type === group[0] && !e.wiederkehrend && (!incomeSearchQuery || (e.label || '').toLowerCase().includes(incomeSearchQuery.toLowerCase())))" :key="e.id" class="cash-entry" @mouseenter="hoveredIncomeId = e.id" @mouseleave="hoveredIncomeId = null">
                         <div class="cash-entry-left">
@@ -271,15 +375,15 @@
                 </button>
               </div>
             </div>
-            <div v-if="watchlistPending" class="card-skeleton-wrap">
-              <USkeleton v-for="n in 5" :key="n" class="row-skeleton" />
+            <div v-if="watchlistPending" class="list-spinner-wrap">
+              <UIcon name="i-lucide-loader-circle" class="list-spinner-icon animate-spin" />
             </div>
             <template v-else>
             <OverlayScrollbarsComponent :options="osOptions" class="stock-pos-scroll" defer>
             <div class="stock-pos-list">
               <p v-if="!watchlist.length" class="stock-pos-empty">Keine Positionen erfasst</p>
               <template v-for="section in watchlistByPortfolioSorted" :key="section.key">
-                <div class="stock-group-wrap" :style="{ background: colorHex(section.portfolio?.color) + '18' }">
+                <div class="stock-group-wrap">
                 <template v-for="group in section.groups" :key="group.symbol">
                   <div
                     class="stock-pos-row"
@@ -287,7 +391,14 @@
                     @mouseleave="hoveredStockId = null"
                   >
                     <div class="stock-pos-info">
-                      <span class="stock-pos-symbol">{{ group.symbol }}</span>
+                      <div class="stock-pos-symbol-row">
+                        <span
+                          class="stock-portfolio-dot"
+                          :style="{ background: colorHex(portfolioById(group.tranches[0]?.portfolioId)?.color) }"
+                          :title="portfolioById(group.tranches[0]?.portfolioId)?.name ?? ''"
+                        />
+                        <span class="stock-pos-symbol">{{ group.symbol }}</span>
+                      </div>
                       <span class="stock-pos-name-txt">{{ group.name }}</span>
                     </div>
                     <div class="stock-col-value font-[SUSE_Mono]">
@@ -402,7 +513,7 @@
                   </div>
                 </div>
               </div>
-              <div class="breakdown-group">
+              <div class="breakdown-group" style="margin-top: 14px">
                 <div class="breakdown-labels-row font-[SUSE_Mono]">
                   <span v-for="item in stockTypeBreakdown" :key="item.label" :style="{ width: item.pct + '%', color: item.color, opacity: selectedType && selectedType !== item.label ? 0.35 : 1, cursor: 'pointer', transition: 'opacity 0.2s' }" @click="selectedType = selectedType === item.label ? null : item.label">{{ item.label }}</span>
                 </div>
@@ -423,7 +534,7 @@
                   </div>
                 </div>
               </div>
-              <div v-if="sectorBreakdown.length" class="breakdown-group">
+              <div v-if="sectorBreakdown.length" class="breakdown-group" style="margin-top: 14px">
                 <div class="breakdown-labels-row font-[SUSE_Mono]">
                   <span style="color: rgba(255,255,255,0.6)">Sektoren</span>
                 </div>
@@ -446,7 +557,7 @@
                 />
               </div>
               </div>
-              <div class="breakdown-sector-list font-[SUSE_Mono]">
+              <div class="breakdown-sector-list font-[SUSE_Mono]" style="margin-top: 10px">
                 <div v-if="!sectorBreakdown.length" class="breakdown-sector-loading" style="opacity:0.4; font-size:9px;">
                   Keine Sektordaten
                 </div>
@@ -542,12 +653,16 @@
                   </button>
                 </div>
               </div>
-              <div v-if="!bargeldCashBalances.length" class="cash-empty">Kein Cash erfasst</div>
+              <div v-if="cashPending" class="list-spinner-wrap">
+                <UIcon name="i-lucide-loader-circle" class="list-spinner-icon animate-spin" />
+              </div>
+              <div v-else-if="!bargeldCashBalances.length" class="cash-empty">Kein Cash erfasst</div>
               <div v-else class="cash-rows">
                 <div v-for="c in bargeldCashBalances" :key="c.id" class="cash-entry" style="cursor:pointer" @click="openEditCash(c)" @mouseenter="hoveredCashId = c.id" @mouseleave="hoveredCashId = null">
                   <div class="cash-entry-left">
                     <UIcon :name="c.amount < 0 ? 'i-lucide-trending-down' : 'i-lucide-banknote'" class="w-4 h-4 opacity-40" />
                     <span class="cash-entry-portfolio">{{ portfolios.find((p: any) => p.id === c.portfolioId)?.name ?? '—' }}</span>
+                    <span v-if="c.updatedAt" class="cash-entry-updated">{{ fmtUpdated(c.updatedAt) }}</span>
                   </div>
                   <div class="cash-entry-right">
                     <span class="cash-entry-value font-[SUSE_Mono]" :class="{ 'cash-entry-value--negative': c.amount < 0 }">
@@ -585,6 +700,7 @@
                   <div class="cash-entry-left">
                     <UIcon :name="c.amount >= 0 ? 'i-lucide-trending-up' : 'i-lucide-trending-down'" class="w-4 h-4 opacity-40" :style="{ color: c.amount >= 0 ? '#22c55e' : '#ef4444' }" />
                     <span class="cash-entry-portfolio">{{ c.label || (portfolios.find((p: any) => p.id === c.portfolioId)?.name ?? '—') }}</span>
+                    <span v-if="c.updatedAt" class="cash-entry-updated">{{ fmtUpdated(c.updatedAt) }}</span>
                   </div>
                   <div class="cash-entry-right">
                     <span class="cash-entry-value font-[SUSE_Mono]" :class="c.amount >= 0 ? 'cash-entry-value--positive' : 'cash-entry-value--negative'">
@@ -626,7 +742,7 @@
                   <div class="cash-entry-left">
                     <UIcon :name="c.amount < 0 ? 'i-lucide-trending-down' : 'i-lucide-banknote'" class="w-4 h-4 opacity-40" />
                     <span class="cash-entry-portfolio">{{ portfolios.find((p: any) => p.id === c.portfolioId)?.name ?? '—' }}</span>
-                    <span class="cash-entry-updated">{{ new Date(c.updatedAt).toLocaleDateString('de-CH') }}</span>
+                    <span v-if="c.updatedAt" class="cash-entry-updated">{{ fmtUpdated(c.updatedAt) }}</span>
                   </div>
                   <div class="cash-entry-right">
                     <span class="cash-entry-value font-[SUSE_Mono]" :class="{ 'cash-entry-value--negative': c.amount < 0 }">
@@ -666,7 +782,7 @@
                     <div class="cash-entry-left">
                       <UIcon name="i-lucide-landmark" class="w-4 h-4 opacity-40" />
                       <span class="cash-entry-portfolio">{{ portfolios.find((p: any) => p.id === c.portfolioId)?.name ?? '—' }}</span>
-                      <span class="cash-entry-updated">{{ new Date(c.updatedAt).toLocaleDateString('de-CH') }}</span>
+                      <span v-if="c.updatedAt" class="cash-entry-updated">{{ fmtUpdated(c.updatedAt) }}</span>
                     </div>
                     <div class="cash-entry-right">
                       <span class="cash-entry-value font-[SUSE_Mono]">
@@ -756,7 +872,7 @@
                 </div>
               </div>
             </div>
-            <div class="breakdown-group">
+            <div class="breakdown-group" style="margin-top: 14px">
               <div class="breakdown-labels-row font-[SUSE_Mono]">
                 <span v-for="item in metalUnitBreakdown" :key="item.label" :style="{ width: item.pct + '%', color: item.color, opacity: selectedMetalUnit && selectedMetalUnit !== item.label ? 0.35 : 1, cursor: 'pointer', transition: 'opacity 0.2s' }" @click="selectedMetalUnit = selectedMetalUnit === item.label ? null : item.label">{{ item.label }}</span>
               </div>
@@ -777,7 +893,7 @@
                 </div>
               </div>
             </div>
-            <div v-if="metalCoinTypeBreakdown.length" class="breakdown-group">
+            <div v-if="metalCoinTypeBreakdown.length" class="breakdown-group" style="margin-top: 14px">
               <div class="breakdown-labels-row font-[SUSE_Mono]">
                 <span style="color: rgba(255,255,255,0.6)">Münzentyp</span>
               </div>
@@ -800,7 +916,7 @@
                 />
               </div>
             </div>
-            <div class="breakdown-sector-list font-[SUSE_Mono]">
+            <div class="breakdown-sector-list font-[SUSE_Mono]" style="margin-top: 10px">
               <div
                 v-for="item in metalCoinTypeBreakdown"
                 :key="item.label"
@@ -844,8 +960,8 @@
               </button>
             </div>
           </div>
-          <div v-if="metalsPending" class="card-skeleton-wrap">
-            <USkeleton v-for="n in 4" :key="n" class="row-skeleton" />
+          <div v-if="metalsPending" class="list-spinner-wrap">
+            <UIcon name="i-lucide-loader-circle" class="list-spinner-icon animate-spin" />
           </div>
           <OverlayScrollbarsComponent v-else :options="osOptions" class="metal-pos-scroll" defer>
           <div class="metal-pos-list">
@@ -853,55 +969,70 @@
               v-for="group in metalHoldingsFiltered"
               :key="group.metalKey"
               class="metal-group-wrap"
-              :style="{ background: (METAL_COLORS[group.metalKey] ?? '#aaa') + '18' }"
             >
               <!-- Coin-Gruppen -->
               <div class="metal-group-body">
                 <div v-for="cg in group.coinGroups" :key="cg.key">
                   <!-- Coin-Zeile -->
                   <div
-                    class="metal-pos-row"
+                    class="cash-entry"
                     :class="{ 'metal-pos-row-clickable': cg.items.length > 1 }"
+                    style="cursor:pointer"
                     @click="cg.items.length > 1 && toggleCoinGroup(cg.key)"
                     @mouseenter="hoveredRowId = cg.key"
                     @mouseleave="hoveredRowId = null"
                   >
-                    <div class="metal-pos-info">
-                      <span class="metal-pos-name">{{ cg.coinType || metalNameLabel(group.metalKey) }}</span>
-                      <span class="metal-pos-qty font-[SUSE_Mono]">
-                        {{ cg.items.reduce((s: number, h: any) => s + h.quantity, 0) }} {{ cg.items[0]?.unit }}
-                        <span v-if="cg.items.length > 1" class="opacity-50">· {{ cg.items.length }} Tranchen</span>
-                      </span>
-                    </div>
-                    <div class="metal-pos-right">
-                      <div class="metal-pos-value-row">
-                        <UButton v-if="hoveredRowId === cg.key" variant="ghost" color="neutral" icon="i-lucide-pencil" size="xs" @click.stop="openEditHolding(cg.items[0])" />
-                        <span class="metal-pos-value font-[SUSE_Mono]"><FlipNumber :value="Math.round(cg.total).toLocaleString('de-CH')" /> {{ companyCurrency }}</span>
+                    <div class="cash-entry-left">
+                      <UIcon :name="metalPosIcon(cg.coinType)" class="w-4 h-4 opacity-40 shrink-0" />
+                      <div class="metal-pos-label-stack">
+                        <div class="stock-pos-symbol-row">
+                          <span class="stock-portfolio-dot" :style="{ background: METAL_COLORS[group.metalKey] ?? '#aaa' }" />
+                          <span class="cash-entry-portfolio">{{ cg.coinType || metalNameLabel(group.metalKey) }}</span>
+                        </div>
+                        <span class="cash-entry-updated font-[SUSE_Mono]">
+                          {{ cg.items.reduce((s: number, h: any) => s + h.quantity, 0) }} {{ cg.items[0]?.unit }}
+                          <span v-if="cg.items.length > 1" class="opacity-50">· {{ cg.items.length }} Tranchen</span>
+                        </span>
                       </div>
-                      <span
-                        v-if="cg.pnlPct != null"
-                        class="metal-pos-pnl font-[SUSE_Mono]"
-                        :class="cg.pnlPct >= 0 ? 'pnl-positive' : 'pnl-negative'"
-                      >{{ cg.pnlPct >= 0 ? '+' : '' }}{{ cg.pnlPct.toFixed(1) }}%</span>
+                    </div>
+                    <div class="cash-entry-right">
+                      <div class="flex flex-col items-end">
+                        <span class="cash-entry-value font-[SUSE_Mono]"><FlipNumber :value="Math.round(cg.total).toLocaleString('de-CH')" /> {{ companyCurrency }}</span>
+                        <span
+                          v-if="cg.pnlPct != null"
+                          class="metal-pos-pnl font-[SUSE_Mono]"
+                          :class="cg.pnlPct >= 0 ? 'pnl-positive' : 'pnl-negative'"
+                        >{{ cg.pnlPct >= 0 ? '+' : '' }}{{ cg.pnlPct.toFixed(1) }}%</span>
+                      </div>
+                      <div class="cash-entry-actions" :class="{ 'cash-entry-actions--visible': hoveredRowId === cg.key }">
+                        <UButton variant="ghost" color="neutral" icon="i-lucide-pencil" size="xs" @click.stop="openEditHolding(cg.items[0])" />
+                        <UButton v-if="cg.items.length === 1" variant="ghost" color="error" icon="i-lucide-trash-2" size="xs" @click.stop="deleteHoldingInline(cg.items[0].id)" />
+                      </div>
                     </div>
                   </div>
                   <!-- Tranchen -->
                   <div v-if="cg.items.length > 1 && openCoinGroups.has(cg.key)" class="metal-tranchen">
-                    <div v-for="t in cg.items" :key="t.id" class="metal-tranche-row" @mouseenter="hoveredRowId = t.id" @mouseleave="hoveredRowId = null">
-                      <div class="metal-pos-info">
-                        <span class="metal-pos-qty font-[SUSE_Mono]">{{ t.quantity }} {{ t.unit }}</span>
-                        <span v-if="t.purchaseDate" class="metal-tranche-date">{{ t.purchaseDate }}</span>
-                      </div>
-                      <div class="metal-pos-right">
-                        <div class="metal-pos-value-row">
-                          <UButton v-if="hoveredRowId === t.id" variant="ghost" color="neutral" icon="i-lucide-pencil" size="xs" @click.stop="openEditHolding(t)" />
-                          <span class="metal-pos-value font-[SUSE_Mono]"><FlipNumber v-if="t.currentTotal != null" :value="Math.round(t.currentTotal).toLocaleString('de-CH')" /><span v-else>—</span> {{ companyCurrency }}</span>
+                    <div v-for="t in cg.items" :key="t.id" class="cash-entry metal-tranche-entry" @mouseenter="hoveredRowId = t.id" @mouseleave="hoveredRowId = null">
+                      <div class="cash-entry-left">
+                        <div class="w-4 shrink-0" />
+                        <div class="metal-pos-label-stack">
+                          <span class="cash-entry-portfolio font-[SUSE_Mono]">{{ t.quantity }} {{ t.unit }}</span>
+                          <span v-if="t.purchaseDate" class="cash-entry-updated">{{ t.purchaseDate }}</span>
                         </div>
-                        <span
-                          v-if="t.pnlPct != null"
-                          class="metal-pos-pnl font-[SUSE_Mono]"
-                          :class="t.pnlPct >= 0 ? 'pnl-positive' : 'pnl-negative'"
-                        >{{ t.pnlPct >= 0 ? '+' : '' }}{{ t.pnlPct.toFixed(1) }}%</span>
+                      </div>
+                      <div class="cash-entry-right">
+                        <div class="flex flex-col items-end">
+                          <span class="cash-entry-value font-[SUSE_Mono]"><FlipNumber v-if="t.currentTotal != null" :value="Math.round(t.currentTotal).toLocaleString('de-CH')" /><span v-else>—</span> {{ companyCurrency }}</span>
+                          <span
+                            v-if="t.pnlPct != null"
+                            class="metal-pos-pnl font-[SUSE_Mono]"
+                            :class="t.pnlPct >= 0 ? 'pnl-positive' : 'pnl-negative'"
+                          >{{ t.pnlPct >= 0 ? '+' : '' }}{{ t.pnlPct.toFixed(1) }}%</span>
+                        </div>
+                        <div class="cash-entry-actions" :class="{ 'cash-entry-actions--visible': hoveredRowId === t.id }">
+                          <UButton variant="ghost" color="neutral" icon="i-lucide-pencil" size="xs" @click.stop="openEditHolding(t)" />
+                          <UButton variant="ghost" color="error" icon="i-lucide-trash-2" size="xs" @click.stop="deleteHoldingInline(t.id)" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1365,6 +1496,9 @@ import 'overlayscrollbars/overlayscrollbars.css'
 
 definePageMeta({ middleware: 'auth' })
 
+const { data: snapshotsData } = useFetch('/api/finance/snapshot', { lazy: true })
+const snapshots = computed(() => (snapshotsData.value ?? []) as Array<{ date: string; data: { totalValue: number } }>)
+
 const snapshotLoading = ref(false)
 async function triggerSnapshot() {
   snapshotLoading.value = true
@@ -1380,7 +1514,7 @@ async function triggerSnapshot() {
 
 const osOptions = { scrollbars: { autoHide: 'scroll' as const, autoHideDelay: 600 } }
 
-const { data: companyData } = await useFetch<{ currency: string; dividendTax: number }>('/api/settings/company')
+const { data: companyData } = useFetch<{ currency: string; dividendTax: number }>('/api/settings/company', { lazy: true })
 const companyCurrency = computed(() => companyData.value?.currency ?? 'CHF')
 const taxDeductionEnabled = ref(true)
 const dividendTaxFactor = computed(() => taxDeductionEnabled.value ? 1 - (companyData.value?.dividendTax ?? 0) / 100 : 1)
@@ -1388,7 +1522,7 @@ const dividendTaxFactor = computed(() => taxDeductionEnabled.value ? 1 - (compan
 type SummaryGroup = { type: string; value: number; changePct: number; color: string; count: number }
 type Summary = { groups: SummaryGroup[]; totalValue: number; totalChangePct: number }
 
-const { data: summary, pending: summaryPending } = await useFetch<Summary>('/api/finance/portfolio-summary')
+const { data: summary, pending: summaryPending } = useFetch<Summary>('/api/finance/portfolio-summary', { lazy: true })
 
 const metalsTotalFrontend = computed(() =>
   (metalHoldings.value ?? []).reduce((s: number, m: any) => {
@@ -1397,6 +1531,35 @@ const metalsTotalFrontend = computed(() =>
   }, 0)
 )
 
+const SNAP_METAL_TYPES = new Set(['Gold', 'Silber', 'Platin', 'Palladium'])
+const SNAP_FIX_TYPES   = new Set(['Bargeld', 'Schulden', 'Vorsorge', 'Lending', 'Cash'])
+
+// Summary uses 'Cash', snapshots use 'Bargeld'
+const SUMMARY_TO_SNAP: Record<string, string> = { 'Cash': 'Bargeld' }
+
+function snapCategoryValue(snapData: any, label: string): number {
+  const groups: any[] = snapData?.groups ?? []
+  if (label === 'Aktien')
+    return groups.filter(g => !SNAP_METAL_TYPES.has(g.type) && !SNAP_FIX_TYPES.has(g.type)).reduce((s, g) => s + g.value, 0)
+  if (label === 'Edelmetalle')
+    return groups.filter(g => SNAP_METAL_TYPES.has(g.type)).reduce((s, g) => s + g.value, 0)
+  const snapLabel = SUMMARY_TO_SNAP[label] ?? label
+  return groups.find(g => g.type === snapLabel)?.value ?? 0
+}
+
+function getSnapshotBefore(daysAgo: number | 'ytd'): any | null {
+  let targetStr: string
+  if (daysAgo === 'ytd') {
+    targetStr = `${new Date().getFullYear()}-01-01`
+  } else {
+    const d = new Date(); d.setDate(d.getDate() - daysAgo)
+    targetStr = d.toISOString().slice(0, 10)
+  }
+  const sorted = [...(snapshots.value as any[])].sort((a, b) => a.date < b.date ? -1 : 1)
+  const before = sorted.filter(s => s.date <= targetStr)
+  return before.length ? before[before.length - 1] : null
+}
+
 const miniCards = computed(() => {
   const groups = summary.value?.groups ?? []
   const metalsFromFrontend = metalsTotalFrontend.value
@@ -1404,13 +1567,38 @@ const miniCards = computed(() => {
     ? { ...g, value: Math.round(metalsFromFrontend) }
     : g
   )
-  const total = patched.reduce((s, g) => s + g.value, 0) || 1
-  return patched.map(g => ({
-    label:    g.type,
-    value:    g.value,
-    change:   g.changePct,
-    color:    g.color,
-    progress: Math.round((g.value / total) * 100),
+
+  // Passenden Snapshot holen (auch für 1D)
+  const periodSnap = selectedPeriod.value === '1W'  ? getSnapshotBefore(7)
+    : selectedPeriod.value === '1M'  ? getSnapshotBefore(30)
+    : selectedPeriod.value === 'YTD' ? getSnapshotBefore('ytd')
+    : selectedPeriod.value === '1Y'  ? getSnapshotBefore(365)
+    : getSnapshotBefore(1) // 1D: gestern
+
+  // Pro Kategorie change % + CHF berechnen
+  const withChange = patched.map(g => {
+    let changePct: number
+    let changeChf: number
+    const pastVal = periodSnap ? snapCategoryValue(periodSnap.data, g.type) : null
+    if (pastVal != null && pastVal !== 0) {
+      changeChf = Math.round(g.value - pastVal)
+      changePct = parseFloat(((g.value - pastVal) / pastVal * 100).toFixed(2))
+    } else if (selectedPeriod.value === '1D') {
+      // Kein gestern-Snapshot: Fallback auf Market-changePct (Aktien/Metalle)
+      changePct = g.changePct ?? 0
+      changeChf = Math.round(g.value * changePct / 100)
+    } else {
+      changePct = 0
+      changeChf = 0
+    }
+    return { label: g.type, value: g.value, change: changePct, changeChf, color: g.color }
+  })
+
+  // Balken: relativ zum grössten absoluten Change skalieren
+  const maxAbs = Math.max(...withChange.map(c => Math.abs(c.changeChf)), 0.01)
+  return withChange.map(c => ({
+    ...c,
+    progress: Math.round((Math.abs(c.changeChf) / maxAbs) * 100),
   }))
 })
 
@@ -1437,15 +1625,39 @@ const periods = ['1D', '1W', '1M', 'YTD', '1Y'] as const
 type Period = typeof periods[number]
 const selectedPeriod = ref<Period>('1D')
 
+function snapValueBefore(daysAgo: number): number | null {
+  const target = new Date()
+  target.setDate(target.getDate() - daysAgo)
+  const targetStr = target.toISOString().slice(0, 10)
+  const sorted = [...snapshots.value].sort((a, b) => a.date < b.date ? -1 : 1)
+  const before = sorted.filter(s => s.date <= targetStr)
+  return before.length ? before[before.length - 1].data.totalValue : null
+}
+
+function snapValueYtd(): number | null {
+  const jan1 = `${new Date().getFullYear()}-01-01`
+  const sorted = [...snapshots.value].sort((a, b) => a.date < b.date ? -1 : 1)
+  const before = sorted.filter(s => s.date <= jan1)
+  return before.length ? before[before.length - 1].data.totalValue : null
+}
+
+function calcPeriod(snapVal: number | null): { pct: number; chf: number } {
+  if (snapVal == null || snapVal === 0) return { pct: 0, chf: 0 }
+  const current = totalValue.value
+  const chf = Math.round(current - snapVal)
+  const pct = parseFloat(((current - snapVal) / snapVal * 100).toFixed(2))
+  return { pct, chf }
+}
+
 const periodData = computed<Record<Period, { pct: number; chf: number }>>(() => {
   const pct1D = totalChange.value
   const chf1D = Math.round(totalValue.value * pct1D / 100)
   return {
-    '1D':  { pct: pct1D,  chf: chf1D  },
-    '1W':  { pct: +2.13,  chf: +3580  },
-    '1M':  { pct: -0.92,  chf: -1540  },
-    'YTD': { pct: +7.42,  chf: +12300 },
-    '1Y':  { pct: +19.2,  chf: +28750 },
+    '1D':  { pct: pct1D, chf: chf1D },
+    '1W':  calcPeriod(snapValueBefore(7)),
+    '1M':  calcPeriod(snapValueBefore(30)),
+    'YTD': calcPeriod(snapValueYtd()),
+    '1Y':  calcPeriod(snapValueBefore(365)),
   }
 })
 
@@ -1487,6 +1699,12 @@ function brokerLinePoints(name: string): string {
 const brokerStackVisible = ref(false)
 
 // ── Edelmetalle ──
+function metalPosIcon(coinType: string | null | undefined): string {
+  const t = (coinType ?? '').toLowerCase()
+  if (t.includes('barren') || t.includes('bar')) return 'i-lucide-rectangle-horizontal'
+  return 'i-lucide-coins'
+}
+
 const METAL_COLORS: Record<string, string> = {
   gold:      '#d4a94a',
   silver:    '#9eb3be',
@@ -1513,7 +1731,7 @@ type MetalHolding = {
   pnlPct: number | null
   portfolioId: string | null
 }
-const { data: metalHoldings, refresh: refreshMetals, pending: metalsPending } = await useFetch<MetalHolding[]>('/api/metals/holdings', { query: { currency: companyCurrency } })
+const { data: metalHoldings, refresh: refreshMetals, pending: metalsPending } = useFetch<MetalHolding[]>('/api/metals/holdings', { query: { currency: companyCurrency }, lazy: true })
 
 const metalGroups = computed(() => {
   const groups: Record<string, { key: string; name: string; color: string; value: number; changeSum: number; changeWeight: number }> = {}
@@ -1644,6 +1862,15 @@ function openEditHolding(h: any) {
   editHoldingForm.purchaseCurrency = h.purchaseCurrency ?? 'CHF'
   editHoldingPiecesMode.value = false
   editHoldingOpen.value = true
+}
+
+async function deleteHoldingInline(id: string) {
+  const ok = await confirm('Diesen Edelmetall-Eintrag wirklich löschen?', 'Eintrag löschen')
+  if (!ok) return
+  try {
+    await $fetch(`/api/metals/holdings/${id}`, { method: 'DELETE' })
+    await refreshMetals()
+  } catch { /* ignore */ }
 }
 
 const deleteHoldingLoading = ref(false)
@@ -1835,16 +2062,16 @@ interface WatchlistGroup {
   tranches: WatchlistTranche[]
 }
 
-const { data: portfoliosData, refresh: refreshPortfolios } = await useFetch<any[]>('/api/portfolios')
+const { data: portfoliosData, refresh: refreshPortfolios } = useFetch<any[]>('/api/portfolios', { lazy: true })
 const portfolios = computed(() => portfoliosData.value ?? [])
 
-const { data: cashData, refresh: refreshCash } = await useFetch<any[]>('/api/finance/cash')
+const { data: cashData, refresh: refreshCash, pending: cashPending } = useFetch<any[]>('/api/finance/cash', { lazy: true })
 const cashBalances = computed(() => cashData.value ?? [])
 
 // Einkommen & Ausgaben
-const { data: incomeData, refresh: refreshIncome } = await useFetch<any[]>('/api/finance/income')
+const { data: incomeData, refresh: refreshIncome, pending: incomePending } = useFetch<any[]>('/api/finance/income', { lazy: true })
 const incomeEntries = computed(() => incomeData.value ?? [])
-const { data: ausnahmenData, refresh: refreshAusnahmen } = await useFetch<any[]>('/api/finance/income-ausnahmen')
+const { data: ausnahmenData, refresh: refreshAusnahmen } = useFetch<any[]>('/api/finance/income-ausnahmen', { lazy: true })
 const incomeAusnahmen = computed(() => ausnahmenData.value ?? [])
 
 // Ausnahme-Modal
@@ -1877,6 +2104,12 @@ function deadlineDots(endDatum: string | null | undefined): number {
 }
 const incomeSearchOpen = ref(false)
 const incomeSearchQuery = ref('')
+const selectedIncomeSectionId = ref<string | null>(null)
+const incomeTypeFilter = computed(() => {
+  if (selectedIncomeSectionId.value === 'einnahmen') return 'einkommen'
+  if (selectedIncomeSectionId.value === 'ausgaben') return 'ausgabe'
+  return null
+})
 const incomeSelectedMonth = ref<number | null>(new Date().getMonth())
 const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
 const incomePeriod = ref<'stunde' | 'tag' | 'woche' | 'monat' | 'jahr'>('monat')
@@ -1887,9 +2120,71 @@ const incomePeriodMultiplier = computed(() => {
   if (incomePeriod.value === 'jahr')   return 12 - new Date().getMonth()
   return 1 // monat
 })
+const topEinkommen = computed(() => {
+  const manual = [...incomeEntries.value]
+    .filter((e: any) => e.type === 'einkommen' && e.wiederkehrend)
+    .map((e: any) => {
+      const aus = incomeSelectedMonth.value !== null
+        ? incomeAusnahmen.value.find((a: any) => a.entryId === e.id && Number(a.monat) === Number(incomeSelectedMonth.value))
+        : null
+      const monthly = aus ? convert(Number(aus.betrag), e.currency) : convert(toMonthly(e.amount, e.frequenz), e.currency)
+      return { id: e.id, label: e.label, _monthly: monthly }
+    })
+  const divMonthly = totalDividendChf.value / 12
+  const zinsenMonthly = lendingZinsenAll.value.reduce((s: number, e: any) => s + (e.zinsen ?? 0), 0) / 12
+  const extras = [
+    ...(divMonthly > 0 ? [{ id: '__div__', label: 'Dividenden', _monthly: divMonthly }] : []),
+    ...(zinsenMonthly > 0 ? [{ id: '__zinsen__', label: 'Zinsen', _monthly: zinsenMonthly }] : []),
+  ]
+  return [...manual, ...extras]
+    .sort((a, b) => b._monthly - a._monthly)
+    .slice(0, 5)
+})
+const topAusgaben = computed(() =>
+  [...incomeEntries.value]
+    .filter((e: any) => e.type === 'ausgabe' && e.wiederkehrend)
+    .map((e: any) => {
+      const aus = incomeSelectedMonth.value !== null
+        ? incomeAusnahmen.value.find((a: any) => a.entryId === e.id && Number(a.monat) === Number(incomeSelectedMonth.value))
+        : null
+      const monthly = aus ? convert(Number(aus.betrag), e.currency) : convert(toMonthly(e.amount, e.frequenz), e.currency)
+      return { id: e.id, label: e.label, _monthly: monthly }
+    })
+    .sort((a, b) => b._monthly - a._monthly)
+    .slice(0, 5)
+)
+const incomeRatioBreakdown = computed(() => {
+  const ein = incomeSections.value.find((s: any) => s.id === 'einnahmen')?.value ?? 0
+  const aus = incomeSections.value.find((s: any) => s.id === 'ausgaben')?.value ?? 0
+  const total = ein + aus || 1
+  return [
+    { label: 'Einnahmen', value: ein, pct: ein / total * 100, color: '#22c55e' },
+    { label: 'Ausgaben', value: aus, pct: aus / total * 100, color: '#ef4444' },
+  ]
+})
+const hoveredIncomeItem = ref<string | null>(null)
+const selectedIncomeItem = ref<string | null>(null)
+const hoveredAusgabenItem = ref<string | null>(null)
+const selectedAusgabenItem = ref<string | null>(null)
+const selectedRatioFilter = ref<string | null>(null)
+const INCOME_COLORS = ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534']
+const AUSGABEN_COLORS = ['#f87171', '#ef4444', '#dc2626', '#b91c1c', '#991b1b']
+const incomeChartItems = computed(() => {
+  const total = topEinkommen.value.reduce((s: number, e: any) => s + e._monthly, 0) || 1
+  return topEinkommen.value.map((e: any, i: number) => ({
+    ...e, pct: e._monthly / total * 100, color: INCOME_COLORS[i] ?? INCOME_COLORS[INCOME_COLORS.length - 1],
+  }))
+})
+const ausgabenChartItems = computed(() => {
+  const total = topAusgaben.value.reduce((s: number, e: any) => s + e._monthly, 0) || 1
+  return topAusgaben.value.map((e: any, i: number) => ({
+    ...e, pct: e._monthly / total * 100, color: AUSGABEN_COLORS[i] ?? AUSGABEN_COLORS[AUSGABEN_COLORS.length - 1],
+  }))
+})
+
 const incomeModalOpen = ref(false)
 const incomeEditId = ref<string | null>(null)
-const { data: incomeKategorienAll } = await useFetch<{ id: string; name: string; type: string }[]>('/api/finance/income-kategorien')
+const { data: incomeKategorienAll } = useFetch<{ id: string; name: string; type: string }[]>('/api/finance/income-kategorien', { lazy: true })
 const incomeKategorieOptions = computed(() =>
   (incomeKategorienAll.value ?? [])
     .filter(k => k.type === incomeForm.value.type)
@@ -1981,11 +2276,11 @@ const lendingZinsenAll = computed(() =>
     .sort((a: any, b: any) => (a.jahr ?? 0) - (b.jahr ?? 0))
 )
 
-const { data: watchlistData, refresh: refreshWatchlist, pending: watchlistPending } = await useFetch<WatchlistGroup[]>('/api/stocks/watchlist')
+const { data: watchlistData, refresh: refreshWatchlist, pending: watchlistPending } = useFetch<WatchlistGroup[]>('/api/stocks/watchlist', { lazy: true })
 const watchlist = computed(() => watchlistData.value ?? [])
 
 // ── FX (hier, damit convert() für Aktien-Computeds verfügbar ist) ──
-const { data: fxData } = await useFetch<Record<string, number>>('/api/stocks/fx')
+const { data: fxData } = useFetch<Record<string, number>>('/api/stocks/fx', { lazy: true })
 const fx = computed(() => ({ CHF: 1, ...(fxData.value ?? { USD: 0.9, EUR: 0.95, GBP: 1.12 }) }))
 // Konvertiert einen Betrag von einer Währung in die Firmenwährung (via CHF als Zwischenwährung)
 function convert(amount: number, fromCurrency: string): number {
@@ -2005,6 +2300,18 @@ const colorHex = (c: string) => PORTFOLIO_COLORS.find(p => p.value === c)?.hex ?
 const portfolioById = (id: string | null) => id ? portfolios.value.find((p: any) => p.id === id) : null
 
 const fmt = (n: number) => Math.abs(n).toLocaleString('de-CH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+function fmtUpdated(val: string | Date): string {
+  const d = new Date(val)
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const diffDays = Math.floor(diffMs / 86400000)
+  if (diffDays === 0) return 'heute'
+  if (diffDays === 1) return 'gestern'
+  if (diffDays < 7) return `vor ${diffDays} Tagen`
+  if (diffDays < 30) return `vor ${Math.floor(diffDays / 7)} Wo.`
+  if (diffDays < 365) return `vor ${Math.floor(diffDays / 30)} Mon.`
+  return `vor ${Math.floor(diffDays / 365)} J.`
+}
 
 function groupStockPnl(g: WatchlistGroup) {
   if (!g.totalShares || !g.avgPurchasePrice || g.price == null) return 0
@@ -2261,12 +2568,12 @@ function sortGroups(groups: WatchlistGroup[]) {
   })
 }
 
-const watchlistByPortfolioSorted = computed(() =>
-  watchlistByPortfolioFiltered.value.map(section => ({
-    ...section,
-    groups: sortGroups(section.groups),
-  }))
-)
+const watchlistByPortfolioSorted = computed(() => {
+  if (!stockSortKey.value) return watchlistByPortfolioFiltered.value
+  // Beim Sortieren: alle Gruppen global sortieren, Portfolio-Trennung aufheben
+  const allGroups = watchlistByPortfolioFiltered.value.flatMap(s => s.groups)
+  return [{ key: '__sorted__', portfolio: null, groups: sortGroups(allGroups) }]
+})
 
 // Stock edit modal
 const editStockOpen = ref(false)
@@ -2619,9 +2926,16 @@ const incomeSections = computed(() => {
   const ausgaben = ausgabenManual * m
   const total = einnahmen + ausgaben || 1
 
+  function incomeHeight(id: string, value: number) {
+    if (!selectedIncomeSectionId.value) {
+      return `${((value / total) * 100).toFixed(2)}%`
+    }
+    return id === selectedIncomeSectionId.value ? '65%' : '35%'
+  }
+
   return [
-    { id: 'einnahmen', label: 'Einnahmen', value: einnahmen, color: '#22c55e', height: `${Math.max(80, (einnahmen / total) * 340)}px` },
-    { id: 'ausgaben', label: 'Ausgaben', value: ausgaben, color: '#ef4444', height: `${Math.max(80, (ausgaben / total) * 340)}px` },
+    { id: 'einnahmen', label: 'Einnahmen', value: einnahmen, color: '#22c55e', height: incomeHeight('einnahmen', einnahmen) },
+    { id: 'ausgaben', label: 'Ausgaben', value: ausgaben, color: '#ef4444', height: incomeHeight('ausgaben', ausgaben) },
   ]
 })
 
@@ -3322,7 +3636,16 @@ const dividendAvgYield = computed(() => {
 
 .pill-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pill-overview-title {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: -0.01em;
 }
 
 
@@ -3573,6 +3896,22 @@ const dividendAvgYield = computed(() => {
   height: 36px;
   border-radius: 10px;
 }
+
+.list-spinner-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 32px 0;
+}
+
+.list-spinner-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--f-text-muted, #9ca3af);
+  opacity: 0.5;
+}
+
 
 .pill-skeleton-mini {
   height: 80px;
@@ -3985,6 +4324,19 @@ const dividendAvgYield = computed(() => {
   min-width: 0;
 }
 
+.stock-pos-symbol-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.stock-portfolio-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 .stock-pos-symbol {
   font-size: 13px;
   font-weight: 600;
@@ -4187,6 +4539,16 @@ const dividendAvgYield = computed(() => {
 
 :global(.dark) .cash-entry:hover {
   background: rgba(255,255,255,0.07);
+}
+
+.metal-pos-label-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.metal-tranche-entry {
+  padding-left: 8px;
 }
 
 .cash-entry-left {

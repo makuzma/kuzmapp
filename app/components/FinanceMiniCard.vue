@@ -3,17 +3,17 @@
     <div class="mini-header">
       <span class="mini-title">{{ label }}</span>
       <UIcon
-        name="i-lucide-triangle"
+        :name="change >= 0 ? 'i-lucide-caret-up' : 'i-lucide-caret-down'"
         class="w-2.5 h-2.5"
-        :class="change >= 0 ? 'text-green-500 rotate-0' : 'text-red-500 rotate-180'"
+        :class="change >= 0 ? 'text-green-500' : 'text-red-500'"
       />
     </div>
     <div v-show="change !== 0" class="mini-change font-suse-mono" :class="change >= 0 ? 'text-green-500' : 'text-red-500'">
       {{ change >= 0 ? '+' : '' }}{{ change.toFixed(1) }}%
-      {{ Math.abs(Math.round(value * change / 100)).toLocaleString('de-CH') }} CHF
+      {{ Math.abs(changeChf).toLocaleString('de-CH') }} CHF
     </div>
     <div class="mini-bar-track">
-      <div class="mini-bar-fill" :style="{ width: progress + '%', background: color }" />
+      <div class="mini-bar-fill" :style="{ width: progress + '%', background: change >= 0 ? '#22c55e' : '#ef4444' }" />
     </div>
     <div class="mini-value font-suse-mono" :class="{ 'mini-value--negative': value < 0 }">
       {{ value < 0 ? '−' : '' }}{{ Math.abs(value).toLocaleString('de-CH') }}
@@ -26,6 +26,7 @@ const props = defineProps<{
   label: string
   value: number
   change: number
+  changeChf: number
   progress: number
   color: string
   shadow: string

@@ -22,7 +22,7 @@ function toOz(quantity: number, unit: string): number {
 async function fetchHistory(symbol: string): Promise<Map<string, number>> {
   try {
     const data = await $fetch<any>(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1mo`,
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=3mo`,
       { headers: { 'User-Agent': UA } },
     )
     const result = data?.chart?.result?.[0]
@@ -62,6 +62,9 @@ function getPrevPrice(history: Map<string, number>, date: string): number | null
 export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session) throw createError({ statusCode: 401 })
+  const body = await readBody(event).catch(() => ({}))
+  const fromDate: string | null = body?.from ?? null
+  const toDate: string | null = body?.to ?? null
 
   const [portfolios, watchlist, cashBalances, metalHoldings, companySettings, fx, saule3aRows] = await Promise.all([
     $fetch<any[]>('/api/portfolios', { headers: event.headers }),
@@ -92,14 +95,25 @@ export default defineEventHandler(async (event) => {
   const stockHistoryMap = new Map(stockHistories.map(({ sym, history }) => [sym, history]))
   const metalHistoryMap = new Map(metalHistories.map(({ key, history }) => [key, history]))
 
-  // Build last 7 trading days (excluding today)
+  // Build trading days: custom range or last 7 days
   const tradingDates: string[] = []
-  for (let i = 1; i <= 21 && tradingDates.length < 7; i++) {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    const dow = d.getDay()
-    if (dow === 0 || dow === 6) continue
-    tradingDates.push(d.toISOString().slice(0, 10))
+  if (fromDate && toDate) {
+    const cur = new Date(fromDate)
+    const end = new Date(toDate)
+    while (cur <= end) {
+      const dow = cur.getDay()
+      if (dow !== 0 && dow !== 6) tradingDates.push(cur.toISOString().slice(0, 10))
+      cur.setDate(cur.getDate() + 1)
+    }
+  }
+  else {
+    for (let i = 1; i <= 21 && tradingDates.length < 7; i++) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const dow = d.getDay()
+      if (dow === 0 || dow === 6) continue
+      tradingDates.push(d.toISOString().slice(0, 10))
+    }
   }
 
   // Load existing snapshot dates
